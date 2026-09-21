@@ -561,6 +561,7 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
 const SUPABASE_URL      = "https://wnctwjsyfmticbxikjer.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduY3R3anN5Zm10aWNieGlramVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5ODYxNjUsImV4cCI6MjEwNTU2MjE2NX0.cFRV23XE25q_3i_3kErawOQdAoZu2Q7Z7oGfoTt-upk";
 /* ========================================================= */
+const PUSH_FUNCTION = "super-worker"; // Name der Edge Function in Supabase
 const VAPID_PUBLIC_KEY = "BLMbJOkr5P02QNeNwUABWqP1HO2tFiVjDIxPfVa4aWHv0S_rhBV4DmA59EPKAs_6OtGdJbfEUQ6J7CUkv_BtTJs";
 
 const CATS_OUT=["Lebensmittel","Essen & Trinken","Fast Food","Tanken & Auto","ÖPNV & Bahn","Wohnen","Freizeit","Shopping","Investment","Gesundheit","Uni & Bücher","Geschenke","Sonstiges"];
@@ -1475,10 +1476,10 @@ $("pushOff").onclick=async()=>{
 $("pushTest").onclick=async()=>{
   if(!pushSub)return;
   try{
-    const r=await fetch(SUPABASE_URL+"/functions/v1/erinnerung",{method:"POST",headers:{"Content-Type":"application/json",apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+SUPABASE_ANON_KEY},body:JSON.stringify({mode:"test",endpoint:pushSub.endpoint})});
+    const r=await fetch(SUPABASE_URL+"/functions/v1/"+PUSH_FUNCTION,{method:"POST",headers:{"Content-Type":"application/json",apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+SUPABASE_ANON_KEY},body:JSON.stringify({mode:"test",endpoint:pushSub.endpoint})});
     const j=await r.json().catch(()=>({}));
     const why=j.error||j.message||j.msg||"";
-    flash(r.ok&&j.ok?"Test gesendet. Die Mitteilung kommt gleich.":r.status===404&&!j.error?"Test fehlgeschlagen (404): Supabase findet keine Funktion namens „erinnerung“. "+why:"Test fehlgeschlagen ("+r.status+(why?": "+why:"")+")",!(r.ok&&j.ok),8000);
+    flash(r.ok&&j.ok?"Test gesendet. Die Mitteilung kommt gleich.":r.status===404&&!j.error?"Test fehlgeschlagen (404): Supabase findet keine Funktion namens „"+PUSH_FUNCTION+"“. "+why:"Test fehlgeschlagen ("+r.status+(why?": "+why:"")+")",!(r.ok&&j.ok),8000);
   }catch(e){flash("Test fehlgeschlagen: Edge Function nicht erreichbar.",true,5000)}
 };
 
