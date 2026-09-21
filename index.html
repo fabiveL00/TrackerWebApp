@@ -216,6 +216,26 @@ footer{margin-top:36px;display:flex;justify-content:space-between;gap:12px;flex-
 footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13px}
 @media (prefers-reduced-motion:no-preference){.bar i{transition:width .35s cubic-bezier(.2,.8,.2,1)}.seg button,.tabbar button{transition:background .2s,color .2s}}
 @media (prefers-reduced-transparency:reduce){.glass,.card,.group,.cats,.ledger{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--solid)}}
+
+/* Analyse */
+.ana-top .per{font-size:17px;font-weight:600;color:var(--label2)}
+.ana-top .sub{font-size:15px;color:var(--label2);margin-top:2px}
+.stack{display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--fill);margin-top:16px;gap:2px}
+.stack i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:13px;color:var(--label2)}
+.legend b{display:inline-block;width:8px;height:8px;border-radius:99px;margin-right:6px;vertical-align:1px}
+.ana-list{margin-top:12px}
+.finding{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;width:100%;text-align:left;background:none;border:0;padding:14px 16px}
+.finding + .finding::before{content:"";position:absolute;left:16px;right:0;top:0;border-top:.5px solid var(--sep)}
+.finding:active{background:var(--fill2)}
+.ft{font-weight:600;font-size:16px}
+.fx{font-size:14px;color:var(--label2);line-height:1.4}
+.fs{font-size:13px;font-weight:600;color:var(--green-t);margin-top:2px}
+.pill{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:99px;margin-bottom:2px}
+.pill.red{color:var(--red-t);background:color-mix(in srgb,var(--red) 14%,transparent)}
+.pill.orange{color:var(--orange-t);background:color-mix(in srgb,var(--orange) 16%,transparent)}
+.pill.blue{color:var(--blue);background:color-mix(in srgb,var(--blue) 14%,transparent)}
+.pill.green{color:var(--green-t);background:color-mix(in srgb,var(--green) 16%,transparent)}
 </style>
 
 </head>
@@ -269,6 +289,8 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
       <div class="field" style="flex:1 1 100%"><label for="txAmount">Betrag</label><div class="amountwrap"><input id="txAmount" inputmode="decimal" placeholder="0,00"><span>€</span></div></div>
     </div>
     <div class="chips" id="txCats"></div>
+    <div class="row" id="payRow"><div class="field" style="flex:1 1 100%"><label>Bezahlt mit</label>
+      <div class="seg" role="group" aria-label="Bezahlt mit"><button type="button" id="payKonto" aria-pressed="true">Konto / Bar</button><button type="button" id="payKarte" aria-pressed="false">Kreditkarte</button></div></div></div>
     <div class="row"><div class="field" style="flex:2 1 150px"><label for="txNote">Notiz</label><input id="txNote" placeholder="z. B. Edeka, Mensa"></div><div class="field" style="flex:1 1 140px"><label for="txDate">Datum</label><input id="txDate" type="date"></div></div>
     <div class="actions">
       <button class="btn" type="submit" id="txSave">Speichern</button>
@@ -286,6 +308,9 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
   <!-- Übersicht -->
   <section id="pane-cats" hidden>
     <div class="flow" id="flow"></div>
+    <div id="kkBox"></div>
+    <h2 class="sec">Analyse</h2>
+    <div id="analysis"></div>
     <h2 class="sec">Ausgaben nach Kategorie</h2>
     <p class="hint">Tipp auf eine Kategorie, um die Ausgaben im gewählten Monat zu sehen.</p>
     <div id="catsList"></div>
@@ -324,6 +349,7 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
       <div class="glass"><div class="label">Pro Jahr</div><div class="val num" id="aboYear">–</div></div>
       <div class="glass"><div class="label">Aktiv</div><div class="val num" id="aboCount">–</div></div>
     </div>
+    <p class="hint" id="aboInvHint" style="margin:-4px 16px 12px"></p>
     <form class="card" id="aboForm" autocomplete="off">
       <div class="row" style="margin-top:0">
         <div class="field" style="flex:2 1 180px"><label for="aboName">Name</label><input id="aboName" placeholder="z. B. Spotify"></div>
@@ -337,6 +363,7 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
           </select></div>
         <div class="field"><label for="aboStart">Erste Abbuchung</label><input id="aboStart" type="date"></div>
         <div class="field"><label for="aboCat">Kategorie</label><select id="aboCat"></select></div>
+        <div class="field"><label for="aboPay">Bezahlt über</label><select id="aboPay"><option value="konto">Konto</option><option value="karte">Kreditkarte</option></select></div>
       </div>
       <div class="actions">
         <button class="btn" type="submit" id="aboSave">Abo hinzufügen</button>
@@ -401,7 +428,8 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const CATS_OUT=["Lebensmittel","Essen & Trinken","Fast Food","Tanken & Auto","ÖPNV & Bahn","Wohnen","Freizeit","Shopping","Investment","Gesundheit","Uni & Bücher","Geschenke","Sonstiges"];
 const CATS_IN=["Sonderzahlung","Nebenjob","Geschenk","Rückzahlung","Verkauf","Sonstiges"];
-const CATS_ABO=["Streaming","Musik","Software & Cloud","Mobilfunk & Internet","Versicherung","Fitness","Mitgliedschaft","Sonstiges"];
+const CATS_ABO=["Streaming","Musik","Software & Cloud","Mobilfunk & Internet","Versicherung","Fitness","Mitgliedschaft","Investment","Sonstiges"];
+const isCostAbo=a=>a.cat!=="Investment";
 const IV={m:{l:"monatlich",n:1},q:{l:"vierteljährlich",n:3},h:{l:"halbjährlich",n:6},y:{l:"jährlich",n:12},w:{l:"wöchentlich",n:0}};
 const MONTHS=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
 const TOTAL="__total";
@@ -418,11 +446,12 @@ const budgetName=k=>k===TOTAL?"Gesamtausgaben":k;
 const dim=(y,m)=>new Date(y,m+1,0).getDate();
 
 /* ---------- state ---------- */
-const S={user:null,months:{},loading:new Set(),abos:[],budgets:{},gehalt:[],wishes:[],openCat:null};
+const S={user:null,months:{},loading:new Set(),abos:[],budgets:{},gehalt:[],wishes:[],openCat:null,settings:{},noPay:false};
+const lastPay=()=>{try{return localStorage.getItem("hb-pay")==="karte"?"karte":"konto"}catch(e){return"konto"}};
 const now=new Date();
 let view={y:now.getFullYear(),m:now.getMonth()};
 let tab="list";
-let tx={type:"out",cat:CATS_OUT[0],editing:null,editDate:null};
+let tx={type:"out",cat:CATS_OUT[0],editing:null,editDate:null,pay:lastPay()};
 let aboEditing=null,wishEditing=null;
 const mk=()=>view.y+"-"+pad(view.m+1);
 
@@ -430,12 +459,12 @@ const mk=()=>view.y+"-"+pad(view.m+1);
 const configured=!SUPABASE_URL.includes("DEIN-PROJEKT")&&!SUPABASE_ANON_KEY.includes("DEIN-");
 const sb=configured&&window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true}}):null;
 
-const fromTx=r=>({id:r.id,type:r.typ==="einnahme"?"in":"out",amount:Number(r.betrag),cat:r.kategorie,note:r.notiz||"",date:r.datum});
-const toTx=e=>({id:e.id,user_id:S.user.id,typ:e.type==="in"?"einnahme":"ausgabe",betrag:e.amount,kategorie:e.cat,notiz:e.note,datum:e.date});
-const fromAbo=r=>({id:r.id,name:r.name,amount:Number(r.betrag),interval:r.intervall,start:r.erste_abbuchung,cat:r.kategorie,active:r.aktiv});
+const fromTx=r=>({id:r.id,type:r.typ==="einnahme"?"in":"out",amount:Number(r.betrag),cat:r.kategorie,note:r.notiz||"",date:r.datum,pay:r.zahlart==="karte"?"karte":"konto"});
+const toTx=e=>{const o={id:e.id,user_id:S.user.id,typ:e.type==="in"?"einnahme":"ausgabe",betrag:e.amount,kategorie:e.cat,notiz:e.note,datum:e.date};if(!S.noPay)o.zahlart=e.type==="out"&&e.pay==="karte"?"karte":"konto";return o};
+const fromAbo=r=>({id:r.id,name:r.name,amount:Number(r.betrag),interval:r.intervall,start:r.erste_abbuchung,cat:r.kategorie,active:r.aktiv,pay:r.zahlart==="karte"?"karte":"konto"});
 const fromSal=r=>({id:r.id,amount:Number(r.betrag),day:r.zahltag,from:String(r.gueltig_ab).slice(0,7)});
 const fromWish=r=>({id:r.id,name:r.name,price:Number(r.preis),note:r.notiz||""});
-const toAbo=a=>({id:a.id,user_id:S.user.id,name:a.name,betrag:a.amount,intervall:a.interval,erste_abbuchung:a.start,kategorie:a.cat,aktiv:a.active});
+const toAbo=a=>{const o={id:a.id,user_id:S.user.id,name:a.name,betrag:a.amount,intervall:a.interval,erste_abbuchung:a.start,kategorie:a.cat,aktiv:a.active};if(!S.noPay)o.zahlart=a.pay==="karte"?"karte":"konto";return o};
 
 async function loadMonth(k,force){
   if(!force&&(S.months[k]||S.loading.has(k)))return;
@@ -447,13 +476,14 @@ async function loadMonth(k,force){
   S.months[k]=data.map(fromTx);render();
 }
 async function loadStatic(){
-  const [a,b,g,w]=await Promise.all([sb.from("abos").select("*").order("created_at"),sb.from("budgets").select("*"),sb.from("gehalt").select("*").order("gueltig_ab"),sb.from("wuensche").select("*").order("created_at")]);
+  const [a,b,g,w,st]=await Promise.all([sb.from("abos").select("*").order("created_at"),sb.from("budgets").select("*"),sb.from("gehalt").select("*").order("gueltig_ab"),sb.from("wuensche").select("*").order("created_at"),sb.from("einstellungen").select("*").maybeSingle()]);
   if(a.error||b.error){flash("Laden fehlgeschlagen: "+(a.error||b.error).message,true,6000);return}
   S.abos=a.data.map(fromAbo);
   S.budgets=Object.fromEntries(b.data.map(r=>[r.schluessel,Number(r.betrag)]));
   S.needsUpdate=!!(g.error||w.error);
   S.gehalt=g.error?[]:g.data.map(fromSal);
   S.wishes=w.error?[]:w.data.map(fromWish);
+  S.noPay=!!st.error;S.settings=(st.data&&st.data.daten)||{};
   render();
 }
 async function write(promise,reload){
@@ -505,16 +535,18 @@ function salaryFor(y,m){
 const fmtMonth=k=>{const [y,m]=k.split("-").map(Number);return MONTHS[m-1]+" "+y};
 
 /* ---------- derived ---------- */
-function monthRows(){
-  const items=(S.months[mk()]||[]).map(x=>({...x,src:"tx"}));
-  const sal=salaryFor(view.y,view.m);
+function monthRows(){return rowsFor(view.y,view.m)}
+function rowsFor(y,m){
+  const key=y+"-"+pad(m+1);
+  const items=(S.months[key]||[]).map(x=>({...x,src:"tx"}));
+  const sal=salaryFor(y,m);
   if(sal)items.push({id:"sal@"+sal.date,type:"in",amount:sal.amount,cat:"Gehalt",note:"Gehalt",date:sal.date,src:"sal"});
-  S.abos.forEach(a=>chargesIn(a,view.y,view.m).forEach(date=>items.push({id:a.id+"@"+date,aboId:a.id,type:"out",amount:a.amount,cat:a.cat,note:a.name,date,src:"abo"})));
+  S.abos.forEach(a=>chargesIn(a,y,m).forEach(date=>items.push({id:a.id+"@"+date,aboId:a.id,type:"out",amount:a.amount,cat:a.cat,note:a.name,date,src:"abo",pay:a.pay})));
   return items.sort((a,b)=>b.date.localeCompare(a.date)||(a.src!=="tx")-(b.src!=="tx"));
 }
 function spentBy(rows){
   const t={[TOTAL]:0};
-  rows.filter(r=>r.type==="out").forEach(r=>{const k=r.src==="abo"?"Abos":r.cat;t[k]=(t[k]||0)+r.amount;t[TOTAL]+=r.amount});
+  rows.filter(r=>r.type==="out").forEach(r=>{const k=catKey(r);t[k]=(t[k]||0)+r.amount;t[TOTAL]+=r.amount});
   return t;
 }
 function budgetStates(rows){
@@ -533,8 +565,8 @@ function render(){
   const rows=monthRows();
   const inc=rows.filter(r=>r.type==="in").reduce((s,r)=>s+r.amount,0);
   const out=rows.filter(r=>r.type==="out").reduce((s,r)=>s+r.amount,0);
-  const aboOut=rows.filter(r=>r.src==="abo").reduce((s,r)=>s+r.amount,0);
-  const active=S.abos.filter(a=>a.active);
+  const aboOut=rows.filter(r=>catKey(r)==="Abos").reduce((s,r)=>s+r.amount,0);
+  const active=S.abos.filter(a=>a.active&&isCostAbo(a));
   const bal=inc-out;
   $("sIn").textContent=eur.format(inc);
   $("sOut").textContent=eur.format(out);
@@ -552,6 +584,7 @@ function render(){
   renderSalary();
   renderWishes(bal);
   renderFlow(rows);
+  if(tab==="cats"){ensureCardMonths();renderCard();renderAnalysis(rows)}
   $("homeTop").hidden=tab!=="list";
   $("pageTitle").textContent={list:"Buchungen",cats:"Übersicht",abos:"Monatlich",wish:"Wünsche"}[tab];
   ["list","cats","abos","wish"].forEach(t=>{$("pane-"+t).hidden=tab!==t;$("tab-"+t).setAttribute("aria-selected",tab===t)});
@@ -564,6 +597,8 @@ function renderForm(){
   if(!cats.includes(tx.cat))tx.cat=cats[0];
   $("txCats").innerHTML=cats.map(c=>`<button type="button" class="chip" aria-pressed="${c===tx.cat}" data-cat="${esc(c)}">${esc(c)}</button>`).join("");
   const sc=$("txCats"),on=sc.querySelector('[aria-pressed="true"]');if(on){const x=on.getBoundingClientRect().left-sc.getBoundingClientRect().left+sc.scrollLeft,l=x-16,r=x+on.offsetWidth+16-sc.clientWidth;if(sc.scrollLeft>l)sc.scrollLeft=l;else if(sc.scrollLeft<r)sc.scrollLeft=r}
+  $("payRow").hidden=tx.type!=="out"||S.noPay;
+  $("payKonto").setAttribute("aria-pressed",tx.pay!=="karte");$("payKarte").setAttribute("aria-pressed",tx.pay==="karte");
   $("txSave").textContent=tx.editing?"Änderung speichern":"Speichern";
   $("txCancel").hidden=$("txDelete").hidden=!tx.editing;
 }
@@ -577,7 +612,7 @@ function renderList(rows,loaded){
     const list=by[day];const sum=list.reduce((s,r)=>s+(r.type==="in"?r.amount:-r.amount),0);
     return `<div class="day"><div class="dayhead"><span>${fmtDay(day)}</span><span class="num">${(sum>0?"+":"")+eur.format(sum)}</span></div><div class="group">`+
       list.map(r=>{
-        const inner=`<span class="t">${esc(r.note||r.cat)}${r.src==="abo"?'<span class="tag">Abo</span>':r.src==="sal"?'<span class="tag">Auto</span>':""}</span><span class="m">${esc(r.cat)}</span><span class="a num ${r.type==="in"?"pos":""}">${r.type==="in"?"+":"−"}${eur.format(r.amount)}</span>`;
+        const inner=`<span class="t">${esc(r.note||r.cat)}${r.src==="abo"?'<span class="tag">Abo</span>':r.src==="sal"?'<span class="tag">Auto</span>':""}${r.pay==="karte"?'<span class="tag">Karte</span>':""}</span><span class="m">${esc(r.cat)}</span><span class="a num ${r.type==="in"?"pos":""}">${r.type==="in"?"+":"−"}${eur.format(r.amount)}</span>`;
         if(r.src==="sal")return `<button type="button" class="item" data-sal="1" title="Gehalt bearbeiten">${inner}</button>`;
         return r.src==="abo"?`<button type="button" class="item" data-abo="${r.aboId}" title="Abo bearbeiten">${inner}</button>`:`<button type="button" class="item" data-tx="${r.id}" data-date="${r.date}" title="Bearbeiten">${inner}</button>`;
       }).join("")+`</div></div>`;
@@ -589,9 +624,9 @@ function renderAlerts(rows){
   $("alerts").innerHTML=list.map(x=>`<button type="button" data-goto="cats" class="glass ${x.level}"><span class="dot"></span><span class="txt"><b>${esc(budgetName(x.k))}: ${x.level==="over"?"Budget überschritten":"Budget fast erreicht"}</b><span class="num">${Math.round(x.p*100)} % · ${eur.format(x.s)} von ${eur.format(x.b)}</span></span></button>`).join("");
 }
 
-function catKey(r){return r.src==="abo"?"Abos":r.cat}
+function catKey(r){return r.src==="abo"&&r.cat!=="Investment"?"Abos":r.cat}
 function itemHtml(r){
-  const inner=`<span class="t">${esc(r.note||r.cat)}${r.src==="abo"?'<span class="tag">Abo</span>':""}</span><span class="m">${fmtShort(r.date)}${r.src==="abo"?" · "+esc(r.cat):""}</span><span class="a num">−${eur.format(r.amount)}</span>`;
+  const inner=`<span class="t">${esc(r.note||r.cat)}${r.src==="abo"?'<span class="tag">Abo</span>':""}${r.pay==="karte"?'<span class="tag">Karte</span>':""}</span><span class="m">${fmtShort(r.date)}${r.src==="abo"?" · "+esc(r.cat):""}</span><span class="a num">−${eur.format(r.amount)}</span>`;
   return r.src==="abo"?`<button type="button" class="item" data-abo="${r.aboId}">${inner}</button>`:`<button type="button" class="item" data-tx="${r.id}" data-date="${r.date}">${inner}</button>`;
 }
 function renderCats(rows){
@@ -625,8 +660,8 @@ function renderFlow(rows){
   const sal=rows.filter(r=>r.src==="sal").reduce((s,r)=>s+r.amount,0);
   const extra=rows.filter(r=>r.type==="in"&&r.src!=="sal").reduce((s,r)=>s+r.amount,0);
   const out=rows.filter(r=>r.type==="out");
-  const abo=out.filter(r=>r.src==="abo").reduce((s,r)=>s+r.amount,0);
-  const inv=out.filter(r=>r.src!=="abo"&&r.cat==="Investment").reduce((s,r)=>s+r.amount,0);
+  const abo=out.filter(r=>catKey(r)==="Abos").reduce((s,r)=>s+r.amount,0);
+  const inv=out.filter(r=>r.cat==="Investment").reduce((s,r)=>s+r.amount,0);
   const rest=out.reduce((s,r)=>s+r.amount,0)-abo-inv;
   const bal=sal+extra-abo-inv-rest;
   const line=(l,v,cls)=>`<div class="fl${cls?" "+cls:""}"><span>${l}</span><span class="num">${v}</span></div>`;
@@ -639,12 +674,96 @@ function renderFlow(rows){
     line("Übrig",(bal>0?"+":"")+eur.format(bal),"sum "+(bal<0?"neg":""))+`</div>`+
     (S.gehalt.length?"":`<p class="hint">Noch kein Gehalt hinterlegt. <button type="button" class="linkbtn" id="goSal">Jetzt eintragen</button></p>`);
 }
+/* ---------- Analyse: vermeidbare Ausgaben ---------- */
+const ESSENTIAL=new Set(["Lebensmittel","Wohnen","Gesundheit","Tanken & Auto","ÖPNV & Bahn","Uni & Bücher","Versicherung","Mobilfunk & Internet"]);
+const OPTIONAL_ABO=new Set(["Streaming","Musik","Software & Cloud","Fitness","Mitgliedschaft","Sonstiges"]);
+function analyze(rows){
+  const F=[];
+  const inc=rows.filter(r=>r.type==="in").reduce((s,r)=>s+r.amount,0);
+  const out=rows.filter(r=>r.type==="out");
+  const tx=out.filter(r=>r.src==="tx");
+  const sum=a=>a.reduce((s,r)=>s+r.amount,0);
+  const byCat=c=>tx.filter(r=>r.cat===c);
+  // 1) Fast Food
+  const ff=byCat("Fast Food"),ffS=sum(ff);
+  if(ff.length>=3||ffS>=30)F.push({lvl:"avoid",title:`${ff.length}× Fast Food: ${eur.format(ffS)}`,text:`Das ist die typischste vermeidbare Ausgabe. Halbierst du Fast Food, sparst du etwa ${eur.format(ffS/2)} im Monat, also rund ${eur.format(ffS*6)} im Jahr.`,save:ffS/2,cat:"Fast Food"});
+  else if(ff.length)F.push({lvl:"ok",title:`Fast Food im Rahmen: ${eur.format(ffS)}`,text:`${ff.length}× in ${MONTHS[view.m]}, das ist noch moderat.`,save:0,cat:"Fast Food"});
+  // 2) Essen & Trinken
+  const et=byCat("Essen & Trinken"),etS=sum(et);
+  if(et.length>=8||(inc&&etS>inc*.1))F.push({lvl:"avoid",title:`Essen & Trinken unterwegs: ${eur.format(etS)}`,text:`${et.length} Käufe. Öfter selbst mitnehmen (Kaffee, Mittagessen) spart schnell ein Drittel, also etwa ${eur.format(etS*.3)} im Monat.`,save:etS*.3,cat:"Essen & Trinken"});
+  // 3) Kleinbeträge
+  const small=tx.filter(r=>["Shopping","Freizeit","Sonstiges","Geschenke"].includes(r.cat)&&r.amount<15);
+  if(small.length>=5){const sS=sum(small);F.push({lvl:"avoid",title:`${small.length} Spontankäufe unter 15 €: ${eur.format(sS)}`,text:`Einzeln klein, zusammen spürbar. Eine 24-Stunden-Regel vor spontanen Käufen spart oft die Hälfte, etwa ${eur.format(sS/2)}.`,save:sS/2})}
+  // 4) Shopping-Anteil
+  const sh=sum(byCat("Shopping"));
+  if(inc&&sh>inc*.1)F.push({lvl:"avoid",title:`Shopping: ${Math.round(sh/inc*100)} % deiner Einnahmen`,text:`${eur.format(sh)} in ${MONTHS[view.m]}. Richtwert sind höchstens 10 % (${eur.format(inc*.1)}). Große Wünsche besser erst auf die Wunschliste setzen.`,save:sh-inc*.1,cat:"Shopping"});
+  // 5) Abos: doppelte Kategorien
+  const act=S.abos.filter(a=>a.active&&isCostAbo(a));
+  const grp={};act.forEach(a=>(grp[a.cat]=grp[a.cat]||[]).push(a));
+  Object.entries(grp).forEach(([c,l])=>{if(l.length>=2&&c!=="Versicherung"){const cheap=[...l].sort((a,b)=>perMonth(a)-perMonth(b))[0];
+    F.push({lvl:"cut",title:`${l.length} Abos für ${c}`,text:`${l.map(a=>esc(a.name)).join(", ")}. Brauchst du wirklich alle? Ohne ${esc(cheap.name)} sparst du ${eur.format(perMonth(cheap))} im Monat, ${eur.format(perMonth(cheap)*12)} im Jahr.`,save:perMonth(cheap),abo:cheap.id})}});
+  // 6) Abos zum Prüfen (optional)
+  const opt=act.filter(a=>OPTIONAL_ABO.has(a.cat)).sort((a,b)=>perMonth(b)-perMonth(a));
+  opt.forEach(a=>{if(grp[a.cat].length>=2)return;
+    const y=perMonth(a)*12;
+    const q=a.cat==="Fitness"?"Warst du im letzten Monat mindestens 4× dort?":a.cat==="Streaming"||a.cat==="Musik"?"Hast du es diese Woche genutzt? Streaming lässt sich gut monatsweise pausieren.":"Nutzt du es regelmäßig?";
+    F.push({lvl:"check",title:`${esc(a.name)} prüfen: ${eur.format(y)} im Jahr`,text:`${q} Wenn nicht, kündigen.`,save:0,pot:perMonth(a),abo:a.id})});
+  // 7) Abo-Anteil gesamt
+  const aboM=act.reduce((s,a)=>s+perMonth(a),0);
+  if(inc&&aboM>inc*.1)F.push({lvl:"avoid",title:`Abos: ${Math.round(aboM/inc*100)} % deiner Einnahmen`,text:`${eur.format(aboM)} im Monat für Abos. Mehr als 10 % gilt als hoch.`,save:0});
+  // 8) Doppelte Buchungen
+  const seen={};tx.forEach(r=>{const k=r.date+"|"+r.amount+"|"+(r.note||"").toLowerCase()+"|"+r.cat;(seen[k]=seen[k]||[]).push(r)});
+  Object.values(seen).filter(l=>l.length>1).forEach(l=>F.push({lvl:"cut",title:`Doppelt eingetragen? ${esc(l[0].note||l[0].cat)} ${eur.format(l[0].amount)}`,text:`${l.length}× am ${fmtShort(l[0].date)} mit gleichem Betrag. Falls versehentlich, einen Eintrag löschen.`,save:0,cat:l[0].cat}));
+  // 9) Vergleich Vormonat
+  const pm=view.m===0?11:view.m-1,py=view.m===0?view.y-1:view.y,pk=py+"-"+pad(pm+1);
+  if(S.months[pk]){
+    const prev=spentBy(rowsFor(py,pm)),cur=spentBy(rows);
+    Object.keys(cur).filter(k=>k!==TOTAL&&k!=="Investment"&&!ESSENTIAL.has(k)).forEach(k=>{const a=cur[k],b=prev[k]||0;
+      if(b>0&&a-b>=20&&a>b*1.3)F.push({lvl:"check",title:`${esc(k)}: +${Math.round((a/b-1)*100)} % zum Vormonat`,text:`${eur.format(a)} statt ${eur.format(b)} in ${MONTHS[pm]}.`,save:0,cat:k})});
+  }else loadMonth(pk);
+  // 10) Positives
+  const bal=inc-sum(out),inv=sum(out.filter(r=>r.cat==="Investment"));
+  if(inc&&(bal+inv)/inc>=.2)F.push({lvl:"good",title:`Sparquote ${Math.round((bal+inv)/inc*100)} % inklusive Investment`,text:`Mehr als 20 % zurückzulegen ist ein sehr guter Wert.`,save:0});
+  if(inv>0)F.push({lvl:"good",title:`${eur.format(inv)} investiert`,text:`Zählt hier nicht als vermeidbar, das ist Vermögensaufbau.`,save:0,cat:"Investment"});
+  const ess=sum(out.filter(r=>ESSENTIAL.has(r.cat)||(r.src==="abo"&&ESSENTIAL.has(r.cat)))),opt2=sum(out)-ess-inv;
+  return {F,ess,opt:opt2,inv,total:sum(out)};
+}
+const LVL={cut:{n:"Unnötig",c:"red"},avoid:{n:"Vermeidbar",c:"orange"},check:{n:"Prüfen",c:"blue"},ok:{n:"Okay",c:"green"},good:{n:"Gut",c:"green"}};
+function renderAnalysis(rows){
+  const el=$("analysis");
+  if(!S.months[mk()]){el.innerHTML=`<p class="empty">Lade…</p>`;return}
+  const {F,ess,opt,inv,total}=analyze(rows);
+  const save=F.reduce((s,f)=>s+(f.save||0),0),pot=F.reduce((s,f)=>s+(f.pot||0),0);
+  const order={cut:0,avoid:1,check:2,ok:3,good:4};
+  F.sort((a,b)=>order[a.lvl]-order[b.lvl]||(b.save||b.pot||0)-(a.save||a.pot||0));
+  const pct=v=>total?Math.round(v/total*100):0;
+  el.innerHTML=`<div class="card ana-top">
+      <div class="label">Mögliches Sparpotenzial</div>
+      <div class="big num" style="font-size:34px">${eur.format(save)}<span class="per"> /Monat</span></div>
+      <div class="sub">${save?`ca. ${eur.format(save*12)} im Jahr`:"Aktuell nichts Auffälliges"}${pot?` · plus bis zu ${eur.format(pot)}/Monat bei Abos zum Prüfen`:""}</div>
+      ${total?`<div class="stack" role="img" aria-label="Aufteilung der Ausgaben"><i style="width:${pct(ess)}%;background:var(--blue)"></i><i style="width:${pct(opt)}%;background:var(--orange)"></i><i style="width:${pct(inv)}%;background:var(--green)"></i></div>
+      <div class="legend"><span><b style="background:var(--blue)"></b>Notwendig ${pct(ess)} %</span><span><b style="background:var(--orange)"></b>Verzichtbar ${pct(opt)} %</span>${inv?`<span><b style="background:var(--green)"></b>Investment ${pct(inv)} %</span>`:""}</div>`:""}
+    </div>`+
+    (F.length?`<div class="group ana-list">`+F.map((f,i)=>`<button type="button" class="finding" data-i="${i}"><span class="pill ${LVL[f.lvl].c}">${LVL[f.lvl].n}</span><span class="ft">${f.title}</span><span class="fx">${f.text}</span>${f.save?`<span class="fs num">spart ≈ ${eur.format(f.save)}/Monat</span>`:""}</button>`).join("")+`</div>`:`<p class="empty">Noch zu wenige Buchungen für eine Analyse.</p>`)+
+    `<p class="hint">Automatische Einschätzung nach festen Regeln. Du entscheidest, was du wirklich brauchst.</p>`;
+  el._findings=F;
+}
+$("analysis").onclick=e=>{
+  const b=e.target.closest(".finding");if(!b)return;
+  const f=$("analysis")._findings[+b.dataset.i];
+  if(f.abo){openAbo(f.abo);return}
+  const k=f.cat==="Investment"||!f.cat?f.cat:f.cat;
+  if(k){S.openCat=k;render();const t=document.querySelector(`.catbtn[data-k="${CSS.escape(k)}"]`);if(t)t.scrollIntoView({behavior:"smooth",block:"center"})}
+};
+
 function renderAbos(){
-  const active=S.abos.filter(a=>a.active);
+  const active=S.abos.filter(a=>a.active&&isCostAbo(a));
   const m=active.reduce((s,a)=>s+perMonth(a),0);
+  const invM=S.abos.filter(a=>a.active&&!isCostAbo(a)).reduce((s,a)=>s+perMonth(a),0);
   $("aboMonth").textContent=eur.format(m);
   $("aboYear").textContent=eur.format(m*12);
-  $("aboCount").textContent=active.length+" / "+S.abos.length;
+  $("aboCount").textContent=active.length+" / "+S.abos.filter(isCostAbo).length;
+  $("aboInvHint").textContent=invM?`Sparpläne (Kategorie Investment) mit ${eur.format(invM)}/Monat zählen nicht als Abo-Kosten.`:"";
   const cur=$("aboCat").value;
   $("aboCat").innerHTML=CATS_ABO.map(c=>`<option>${esc(c)}</option>`).join("");
   if(cur)$("aboCat").value=cur;
@@ -662,9 +781,11 @@ function renderAbos(){
 
 /* ---------- Buchungen ---------- */
 function defaultDate(){const t=todayIso();return t.slice(0,7)===mk()?t:mk()+"-01"}
-function resetTx(){tx.editing=null;tx.editDate=null;$("txAmount").value="";$("txNote").value="";$("txDate").value=defaultDate();$("txErr").textContent="";renderForm()}
+function resetTx(){tx.editing=null;tx.editDate=null;if(!tx.pay)tx.pay=lastPay();$("txAmount").value="";$("txNote").value="";$("txDate").value=defaultDate();$("txErr").textContent="";renderForm()}
 $("typeOut").onclick=()=>{tx.type="out";renderForm()};
 $("typeIn").onclick=()=>{tx.type="in";renderForm()};
+function setPay(p){tx.pay=p;try{localStorage.setItem("hb-pay",p)}catch(e){}renderForm()}
+$("payKonto").onclick=()=>setPay("konto");$("payKarte").onclick=()=>setPay("karte");
 $("txCats").onclick=e=>{const b=e.target.closest("[data-cat]");if(b){tx.cat=b.dataset.cat;renderForm()}};
 $("txForm").onsubmit=async e=>{
   e.preventDefault();
@@ -672,7 +793,7 @@ $("txForm").onsubmit=async e=>{
   if(isNaN(amount)){$("txErr").textContent="Bitte einen Betrag über 0 eingeben, z. B. 12,50.";$("txAmount").focus();return}
   if(!date){$("txErr").textContent="Bitte ein Datum wählen.";return}
   const k=date.slice(0,7);
-  const entry={id:tx.editing||newId(),type:tx.type,amount,cat:tx.cat,note:$("txNote").value.trim(),date};
+  const entry={id:tx.editing||newId(),type:tx.type,amount,cat:tx.cat,note:$("txNote").value.trim(),date,pay:tx.type==="out"?tx.pay:"konto"};
   const wasEditing=tx.editing,oldK=tx.editDate&&tx.editDate.slice(0,7);
   if(wasEditing&&S.months[oldK])S.months[oldK]=S.months[oldK].filter(x=>x.id!==wasEditing);
   if(S.months[k])S.months[k]=[...S.months[k],entry];
@@ -697,7 +818,7 @@ $("pane-list").onclick=e=>{
   if(b.dataset.abo){openAbo(b.dataset.abo);return}
   if(b.dataset.sal){openSalary();return}
   const k=b.dataset.date.slice(0,7),x=(S.months[k]||[]).find(i=>i.id===b.dataset.tx);if(!x)return;
-  tx={type:x.type,cat:x.cat,editing:x.id,editDate:x.date};
+  tx={type:x.type,cat:x.cat,editing:x.id,editDate:x.date,pay:x.pay||"konto"};
   $("txAmount").value=fmtIn(x.amount);$("txNote").value=x.note||"";$("txDate").value=x.date;$("txErr").textContent="";
   renderForm();$("txForm").scrollIntoView({behavior:"smooth",block:"start"});
 };
@@ -706,7 +827,7 @@ $("catsList").onclick=e=>{
   const it=e.target.closest("button.item");
   if(it){if(it.dataset.abo){openAbo(it.dataset.abo);return}
     const k=it.dataset.date.slice(0,7),x=(S.months[k]||[]).find(i=>i.id===it.dataset.tx);if(!x)return;
-    tx={type:x.type,cat:x.cat,editing:x.id,editDate:x.date};tab="list";
+    tx={type:x.type,cat:x.cat,editing:x.id,editDate:x.date,pay:x.pay||"konto"};tab="list";
     $("txAmount").value=fmtIn(x.amount);$("txNote").value=x.note||"";$("txDate").value=x.date;$("txErr").textContent="";
     render();$("txForm").scrollIntoView({behavior:"smooth",block:"start"});return}
   const b=e.target.closest("button.catbtn");if(!b)return;
@@ -730,11 +851,11 @@ $("budgetCat").onchange=()=>{const v=S.budgets[$("budgetCat").value];$("budgetAm
 $("alerts").onclick=e=>{if(e.target.closest("[data-goto]")){tab="cats";render();window.scrollTo({top:0})}};
 
 /* ---------- Abos ---------- */
-function resetAbo(){aboEditing=null;$("aboName").value="";$("aboAmount").value="";$("aboInterval").value="m";$("aboStart").value=todayIso();$("aboErr").textContent="";render()}
+function resetAbo(){aboEditing=null;$("aboPay").value="konto";$("aboName").value="";$("aboAmount").value="";$("aboInterval").value="m";$("aboStart").value=todayIso();$("aboErr").textContent="";render()}
 function openAbo(id){
   const a=S.abos.find(x=>x.id===id);if(!a)return;
   tab="abos";aboEditing=id;
-  $("aboName").value=a.name;$("aboAmount").value=fmtIn(a.amount);$("aboInterval").value=a.interval;$("aboStart").value=a.start;
+  $("aboPay").value=a.pay||"konto";$("aboName").value=a.name;$("aboAmount").value=fmtIn(a.amount);$("aboInterval").value=a.interval;$("aboStart").value=a.start;
   render();$("aboCat").value=a.cat;$("aboForm").scrollIntoView({behavior:"smooth",block:"start"});
 }
 $("aboForm").onsubmit=async e=>{
@@ -743,7 +864,7 @@ $("aboForm").onsubmit=async e=>{
   if(!name){$("aboErr").textContent="Bitte einen Namen eingeben.";$("aboName").focus();return}
   if(isNaN(amount)){$("aboErr").textContent="Bitte einen Betrag über 0 eingeben.";$("aboAmount").focus();return}
   if(!start){$("aboErr").textContent="Bitte das Datum der ersten Abbuchung wählen.";return}
-  const body={name,amount,interval:$("aboInterval").value,start,cat:$("aboCat").value};
+  const body={name,amount,interval:$("aboInterval").value,start,cat:$("aboCat").value,pay:$("aboPay").value};
   let abo;
   if(aboEditing){abo={...S.abos.find(a=>a.id===aboEditing),...body};S.abos=S.abos.map(a=>a.id===abo.id?abo:a)}
   else{abo={id:newId(),active:true,...body};S.abos=[...S.abos,abo]}
@@ -835,7 +956,7 @@ $("wishDelete").onclick=async()=>{const id=wishEditing;S.wishes=S.wishes.filter(
 $("wishBought").onclick=async()=>{
   const w=S.wishes.find(x=>x.id===wishEditing);if(!w)return;
   const date=todayIso(),k=date.slice(0,7);
-  const entry={id:newId(),type:"out",amount:parseAmt($("wishPrice").value)||w.price,cat:"Shopping",note:$("wishName").value.trim()||w.name,date};
+  const entry={id:newId(),type:"out",amount:parseAmt($("wishPrice").value)||w.price,cat:"Shopping",note:$("wishName").value.trim()||w.name,date,pay:lastPay()};
   S.wishes=S.wishes.filter(x=>x.id!==w.id);
   if(S.months[k])S.months[k]=[...S.months[k],entry];
   resetWish();
@@ -843,6 +964,81 @@ $("wishBought").onclick=async()=>{
   if(ok){await write(sb.from("wuensche").delete().eq("id",w.id),loadStatic);flash("Als Ausgabe gebucht (Shopping, heute). Zum Ändern in den Buchungen antippen.",false,5000)}
   else loadStatic();
 };
+
+/* ---------- Kreditkarte ---------- */
+function kkCfg(){const k=(S.settings&&S.settings.kk)||{};return{a:k.abrechnung||31,b:k.abbuchung||15}}
+function debitOf(date){
+  const [y,m,d]=date.split("-").map(Number),{a,b}=kkCfg();
+  let sy=y,sm=m-1;
+  if(d>Math.min(a,dim(y,m-1))){sm++;if(sm>11){sm=0;sy++}}
+  let by=sy,bm=sm;
+  if(b<=Math.min(a,dim(sy,sm))){bm++;if(bm>11){bm=0;by++}}
+  return by+"-"+pad(bm+1)+"-"+pad(Math.min(b,dim(by,bm)));
+}
+function ensureCardMonths(){for(let i=0;i<3;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);loadMonth(d.getFullYear()+"-"+pad(d.getMonth()+1))}}
+function cardOpen(){
+  const t=todayIso(),items=[];
+  Object.keys(S.months).forEach(k=>{const [y,m]=k.split("-").map(Number);
+    rowsFor(y,m-1).forEach(r=>{if(r.type==="out"&&r.pay==="karte"&&r.date<=t){const d=debitOf(r.date);if(d>t)items.push({...r,debit:d})}})});
+  return items;
+}
+function renderCard(){
+  const el=$("kkBox");
+  if(S.noPay){el.innerHTML=`<h2 class="sec">Kreditkarte</h2><p class="hint err" style="margin:0 16px">Für die Kreditkarten-Funktion bitte supabase-update-3.sql im SQL Editor ausführen.</p>`;return}
+  const items=cardOpen(),{a,b}=kkCfg();
+  const sum=items.reduce((s,r)=>s+r.amount,0);
+  const by={};items.forEach(r=>(by[r.debit]=by[r.debit]||[]).push(r));
+  const dates=Object.keys(by).sort();
+  el.innerHTML=`<h2 class="sec">Kreditkarte</h2>
+    <div class="card"><div class="label">Offen, noch nicht vom Konto abgebucht</div>
+      <div class="big num" style="font-size:34px">${eur.format(sum)}</div>
+      <div class="sub" style="font-size:15px;color:var(--label2);margin-top:2px">${items.length?`${items.length} ${items.length===1?"Kauf":"Käufe"} · nächste Abbuchung am ${fmtShort(dates[0])}`:"Gerade nichts offen."}</div></div>`+
+    (dates.length?`<div class="day"><div class="dayhead"><span>Geplante Abbuchungen</span><span>Betrag</span></div><div class="group">`+dates.map(d=>{const l=by[d],s2=l.reduce((s,r)=>s+r.amount,0);
+      return `<div class="item"><span class="t">Abbuchung am ${fmtShort(d)}</span><span class="m">${l.length} ${l.length===1?"Kauf":"Käufe"} bis ${fmtShort(l.map(r=>r.date).sort().pop())}</span><span class="a num">${eur.format(s2)}</span></div>`}).join("")+`</div></div>`:"")+
+    `<details class="more" id="kkMore"><summary>Abrechnung einstellen</summary>
+      <form class="card" id="kkForm" autocomplete="off"><div class="row" style="margin-top:0">
+        <div class="field"><label for="kkA">Abrechnung am Tag</label><input id="kkA" type="number" inputmode="numeric" min="1" max="31" value="${a}"></div>
+        <div class="field"><label for="kkB">Abbuchung vom Konto am Tag</label><input id="kkB" type="number" inputmode="numeric" min="1" max="31" value="${b}"></div></div>
+        <p class="hint" style="margin:10px 4px 0">Beides steht auf deiner Kreditkartenabrechnung. 31 heißt Monatsende. Liegt der Abbuchungstag vor dem Abrechnungstag, wird im Folgemonat abgebucht.</p>
+        <div class="actions"><button class="btn" type="submit">Speichern</button></div></form></details>
+    <p class="hint">Kreditkartenkäufe zählen am Kauftag als Ausgabe. Die spätere Abbuchung der Kreditkartenrechnung trägst du nicht ein, sonst wäre alles doppelt.</p>`;
+  const f=$("kkForm");
+  f.onsubmit=async e=>{e.preventDefault();
+    const A=Math.min(31,Math.max(1,parseInt($("kkA").value,10)||31)),B=Math.min(31,Math.max(1,parseInt($("kkB").value,10)||15));
+    S.settings={...S.settings,kk:{abrechnung:A,abbuchung:B}};render();
+    await write(sb.from("einstellungen").upsert({user_id:S.user.id,daten:S.settings,updated_at:new Date().toISOString()},{onConflict:"user_id"}),loadStatic);};
+}
+
+/* ---------- Apple Pay: Vorbelegen per Link ---------- */
+const MERCHANTS=[
+  [/rewe|edeka|lidl|aldi|netto|penny|kaufland|norma|tegut|alnatura|real\b|globus|marktkauf/i,"Lebensmittel"],
+  [/mc ?donald|burger ?king|kfc|subway|domino|five guys|pizza hut|dönerr?|kebab|nordsee/i,"Fast Food"],
+  [/aral|shell|esso|\bjet\b|totalenergies|avia|\bomv\b|agip|\beni\b|tankstelle|raiffeisen tank/i,"Tanken & Auto"],
+  [/deutsche bahn|\bdb\b|db vertrieb|flixbus|flixtrain|\bswu\b|\bding\b|bodo|\bvvs\b/i,"ÖPNV & Bahn"],
+  [/apotheke|\bdm\b|dm-drogerie|rossmann|müller drog/i,"Gesundheit"],
+  [/amazon|zalando|h&m|zara|media ?markt|saturn|ikea|about you|decathlon|otto/i,"Shopping"],
+  [/starbucks|café|cafe|bäcker|backhaus|mensa|restaurant|bar\b|pizzeria/i,"Essen & Trinken"],
+  [/kino|cinema|cinemaxx|eventim|steam|playstation|nintendo/i,"Freizeit"],
+  [/thalia|hugendubel|studentenwerk/i,"Uni & Bücher"]
+];
+function guessCat(note){
+  if(!note)return null;const n=note.toLowerCase();
+  const past=Object.values(S.months).flat().filter(r=>r.type==="out"&&(r.note||"").toLowerCase()===n).sort((a,b)=>b.date.localeCompare(a.date))[0];
+  if(past)return past.cat;
+  const hit=MERCHANTS.find(([re])=>re.test(note));return hit?hit[1]:null;
+}
+function handlePrefill(){
+  const q=new URLSearchParams(location.search);if(!q.has("betrag"))return;
+  const amt=parseAmt(q.get("betrag")||""),note=(q.get("notiz")||q.get("haendler")||"").trim(),pay=q.get("zahlart")==="konto"?"konto":"karte";
+  const kat=q.get("kat");
+  view={y:now.getFullYear(),m:now.getMonth()};tab="list";
+  tx={type:"out",cat:(kat&&CATS_OUT.includes(kat))?kat:(guessCat(note)||"Sonstiges"),editing:null,editDate:null,pay};
+  $("txAmount").value=isNaN(amt)?"":fmtIn(amt);$("txNote").value=note;$("txDate").value=todayIso();
+  try{history.replaceState(null,"",location.pathname)}catch(e){}
+  render();loadMonth(mk());
+  setTimeout(()=>{const c=guessCat(note);if(c&&!kat&&!tx.editing&&$("txNote").value===note){tx.cat=c;renderForm()}},1200);
+  flash("Von Apple Pay übernommen: Kategorie prüfen, dann speichern.",false,6000);
+}
 
 /* ---------- Darstellung (Auto / Hell / Dunkel) ---------- */
 const THEME_ICONS={
@@ -887,10 +1083,10 @@ function showView(user){
   $("bootMsg").hidden=true;
   $("loginView").hidden=!!user;$("appView").hidden=!user;
   if(user&&(!S.user||S.user.id!==user.id)){
-    S.user=user;S.months={};S.abos=[];S.budgets={};S.gehalt=[];S.wishes=[];S.openCat=null;
+    S.user=user;S.months={};S.abos=[];S.budgets={};S.gehalt=[];S.wishes=[];S.openCat=null;S.settings={};
     $("storeInfo").textContent="Angemeldet als "+user.email;
     $("txDate").value=defaultDate();$("aboStart").value=todayIso();$("salFrom").value=mk();
-    render();loadStatic();loadMonth(mk());
+    render();loadStatic();loadMonth(mk());handlePrefill();
   }
   if(!user)S.user=null;
 }
