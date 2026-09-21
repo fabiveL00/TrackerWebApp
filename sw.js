@@ -1,5 +1,5 @@
 // Haushaltsbuch – Service Worker: speichert nur die App-Hülle, nie deine Daten.
-const CACHE = "haushaltsbuch-v6";
+const CACHE = "haushaltsbuch-v7";
 const SHELL = ["./", "index.html", "manifest.json", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", e => {

@@ -203,7 +203,7 @@ h2.sec{font-size:22px;font-weight:700;margin:28px 4px 10px}
 .abohead{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:4px 0 14px}
 .abohead>div{padding:12px;border-radius:18px;min-width:0}
 .abohead .label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.abohead .val{font-size:18px;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.abohead .val{font-size:15px;letter-spacing:-.02em;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .salbig{display:flex;flex-direction:column;gap:2px;margin:0 4px 14px}
 .salbig .big{font-size:34px}
 .salbig .sub{font-size:15px;color:var(--label2)}
@@ -236,6 +236,12 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
 .pill.orange{color:var(--orange-t);background:color-mix(in srgb,var(--orange) 16%,transparent)}
 .pill.blue{color:var(--blue);background:color-mix(in srgb,var(--blue) 14%,transparent)}
 .pill.green{color:var(--green-t);background:color-mix(in srgb,var(--green) 16%,transparent)}
+.seg4{grid-template-columns:repeat(4,1fr)}
+.seg4 button{font-size:13px}
+.kinds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:-4px 4px 14px;font-size:13px;color:var(--label2)}
+.kinds div{display:flex;flex-direction:column;gap:1px;padding:0 8px}
+.kinds div:first-child{padding-left:8px}
+.kinds b{color:var(--label);font-weight:600;font-size:15px}
 </style>
 
 </head>
@@ -275,7 +281,7 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
     <div class="trio">
       <div class="glass"><div class="label">Einnahmen</div><div class="val num pos" id="sIn">–</div></div>
       <div class="glass"><div class="label">Ausgaben</div><div class="val num" id="sOut">–</div><div class="sub" id="sOutSub"></div></div>
-      <div class="glass"><div class="label">Abos/Monat</div><div class="val num" id="sAbo">–</div><div class="sub" id="sAboSub"></div></div>
+      <div class="glass"><div class="label">Fixkosten/Mon.</div><div class="val num" id="sAbo">–</div><div class="sub" id="sAboSub"></div></div>
     </div>
   </section>
   <div class="alerts" id="alerts" aria-live="polite"></div>
@@ -343,15 +349,19 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
     </form>
     <div id="salHistory"></div>
 
-    <h2 class="sec">Abos</h2>
+    <h2 class="sec">Fixkosten &amp; Sparpläne</h2>
     <div class="abohead">
-      <div class="glass"><div class="label">Pro Monat</div><div class="val num" id="aboMonth">–</div></div>
-      <div class="glass"><div class="label">Pro Jahr</div><div class="val num" id="aboYear">–</div></div>
-      <div class="glass"><div class="label">Aktiv</div><div class="val num" id="aboCount">–</div></div>
+      <div class="glass"><div class="label">Fix pro Monat</div><div class="val num" id="aboMonth">–</div></div>
+      <div class="glass"><div class="label">Fix pro Jahr</div><div class="val num" id="aboYear">–</div></div>
+      <div class="glass"><div class="label">Sparpläne</div><div class="val num" id="aboCount">–</div></div>
     </div>
+    <div class="kinds" id="kindSum"></div>
     <p class="hint" id="aboInvHint" style="margin:-4px 16px 12px"></p>
     <form class="card" id="aboForm" autocomplete="off">
-      <div class="row" style="margin-top:0">
+      <div class="seg seg4" role="group" aria-label="Art" id="kindSeg">
+        <button type="button" data-kind="abo">Abo</button><button type="button" data-kind="vertrag">Vertrag</button><button type="button" data-kind="vers">Versich.</button><button type="button" data-kind="spar">Sparplan</button>
+      </div>
+      <div class="row">
         <div class="field" style="flex:2 1 180px"><label for="aboName">Name</label><input id="aboName" placeholder="z. B. Spotify"></div>
         <div class="field"><label for="aboAmount">Betrag (€)</label><input id="aboAmount" class="num" inputmode="decimal" placeholder="0,00"></div>
       </div>
@@ -366,7 +376,7 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
         <div class="field"><label for="aboPay">Bezahlt über</label><select id="aboPay"><option value="konto">Konto</option><option value="karte">Kreditkarte</option></select></div>
       </div>
       <div class="actions">
-        <button class="btn" type="submit" id="aboSave">Abo hinzufügen</button>
+        <button class="btn" type="submit" id="aboSave">Hinzufügen</button>
         <button class="btn ghost" type="button" id="aboCancel" hidden>Abbrechen</button>
         <button class="btn ghost" type="button" id="aboPause" hidden>Pausieren</button>
         <button class="btn danger" type="button" id="aboDelete" hidden>Löschen</button>
@@ -428,8 +438,17 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const CATS_OUT=["Lebensmittel","Essen & Trinken","Fast Food","Tanken & Auto","ÖPNV & Bahn","Wohnen","Freizeit","Shopping","Investment","Gesundheit","Uni & Bücher","Geschenke","Sonstiges"];
 const CATS_IN=["Sonderzahlung","Nebenjob","Geschenk","Rückzahlung","Verkauf","Sonstiges"];
-const CATS_ABO=["Streaming","Musik","Software & Cloud","Mobilfunk & Internet","Versicherung","Fitness","Mitgliedschaft","Investment","Sonstiges"];
-const isCostAbo=a=>a.cat!=="Investment";
+/* Wiederkehrende Kosten: Art → Kategorien */
+const REC={
+  abo:{n:"Abo",pl:"Abos",cats:["Streaming","Musik","Software & Cloud","Gaming","Fitness","Mitgliedschaft","Zeitung & Magazine","Sonstiges Abo"],ph:"z. B. Spotify"},
+  vertrag:{n:"Vertrag",pl:"Verträge",cats:["Miete & Nebenkosten","Strom & Gas","Mobilfunk & Internet","Rundfunkbeitrag","Kfz-Steuer","Kredit & Raten","Sonstiger Vertrag"],ph:"z. B. Handyvertrag"},
+  vers:{n:"Versicherung",pl:"Versicherungen",cats:["Haftpflicht","Kfz-Versicherung","Krankenversicherung","Hausrat","Berufsunfähigkeit","Rechtsschutz","Sonstige Versicherung"],ph:"z. B. Haftpflicht"},
+  spar:{n:"Sparplan",pl:"Sparpläne",cats:["Investment"],ph:"z. B. ETF-Sparplan"}
+};
+const LEGACY={"Versicherung":"vers","Sonstiges":"abo"};
+function recKind(cat){if(LEGACY[cat])return LEGACY[cat];for(const k in REC)if(REC[k].cats.includes(cat))return k;return"abo"}
+const CATS_ABO=Object.values(REC).flatMap(g=>g.cats);
+const isCostAbo=a=>recKind(a.cat)!=="spar";
 const IV={m:{l:"monatlich",n:1},q:{l:"vierteljährlich",n:3},h:{l:"halbjährlich",n:6},y:{l:"jährlich",n:12},w:{l:"wöchentlich",n:0}};
 const MONTHS=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
 const TOTAL="__total";
@@ -452,7 +471,7 @@ const now=new Date();
 let view={y:now.getFullYear(),m:now.getMonth()};
 let tab="list";
 let tx={type:"out",cat:CATS_OUT[0],editing:null,editDate:null,pay:lastPay()};
-let aboEditing=null,wishEditing=null;
+let aboEditing=null,wishEditing=null,aboKind="abo";
 const mk=()=>view.y+"-"+pad(view.m+1);
 
 /* ---------- Supabase ---------- */
@@ -565,14 +584,14 @@ function render(){
   const rows=monthRows();
   const inc=rows.filter(r=>r.type==="in").reduce((s,r)=>s+r.amount,0);
   const out=rows.filter(r=>r.type==="out").reduce((s,r)=>s+r.amount,0);
-  const aboOut=rows.filter(r=>catKey(r)==="Abos").reduce((s,r)=>s+r.amount,0);
+  const aboOut=rows.filter(r=>r.src==="abo"&&isCostAbo(r)).reduce((s,r)=>s+r.amount,0);
   const active=S.abos.filter(a=>a.active&&isCostAbo(a));
   const bal=inc-out;
   $("sIn").textContent=eur.format(inc);
   $("sOut").textContent=eur.format(out);
-  $("sOutSub").textContent=aboOut?"davon Abos "+eur.format(aboOut):"";
+  $("sOutSub").textContent=aboOut?"davon fix "+eur.format(aboOut):"";
   $("sAbo").textContent=eur.format(active.reduce((s,a)=>s+perMonth(a),0));
-  $("sAboSub").textContent=active.length+" aktiv";
+  $("sAboSub").textContent="Abos "+eur.format(active.filter(a=>recKind(a.cat)==="abo").reduce((s,a)=>s+perMonth(a),0));
   $("sBal").textContent=(bal>0?"+":"")+eur.format(bal);
   $("sBal").className="big num "+(bal>0?"pos":bal<0?"neg":"");
   $("sRate").textContent=inc>0?"Sparquote "+Math.round(bal/inc*100)+" %":"";
@@ -612,7 +631,7 @@ function renderList(rows,loaded){
     const list=by[day];const sum=list.reduce((s,r)=>s+(r.type==="in"?r.amount:-r.amount),0);
     return `<div class="day"><div class="dayhead"><span>${fmtDay(day)}</span><span class="num">${(sum>0?"+":"")+eur.format(sum)}</span></div><div class="group">`+
       list.map(r=>{
-        const inner=`<span class="t">${esc(r.note||r.cat)}${r.src==="abo"?'<span class="tag">Abo</span>':r.src==="sal"?'<span class="tag">Auto</span>':""}${r.pay==="karte"?'<span class="tag">Karte</span>':""}</span><span class="m">${esc(r.cat)}</span><span class="a num ${r.type==="in"?"pos":""}">${r.type==="in"?"+":"−"}${eur.format(r.amount)}</span>`;
+        const inner=`<span class="t">${esc(r.note||r.cat)}${r.src==="abo"?`<span class="tag">${REC[recKind(r.cat)].n}</span>`:r.src==="sal"?'<span class="tag">Auto</span>':""}${r.pay==="karte"?'<span class="tag">Karte</span>':""}</span><span class="m">${esc(r.cat)}</span><span class="a num ${r.type==="in"?"pos":""}">${r.type==="in"?"+":"−"}${eur.format(r.amount)}</span>`;
         if(r.src==="sal")return `<button type="button" class="item" data-sal="1" title="Gehalt bearbeiten">${inner}</button>`;
         return r.src==="abo"?`<button type="button" class="item" data-abo="${r.aboId}" title="Abo bearbeiten">${inner}</button>`:`<button type="button" class="item" data-tx="${r.id}" data-date="${r.date}" title="Bearbeiten">${inner}</button>`;
       }).join("")+`</div></div>`;
@@ -624,13 +643,13 @@ function renderAlerts(rows){
   $("alerts").innerHTML=list.map(x=>`<button type="button" data-goto="cats" class="glass ${x.level}"><span class="dot"></span><span class="txt"><b>${esc(budgetName(x.k))}: ${x.level==="over"?"Budget überschritten":"Budget fast erreicht"}</b><span class="num">${Math.round(x.p*100)} % · ${eur.format(x.s)} von ${eur.format(x.b)}</span></span></button>`).join("");
 }
 
-function catKey(r){return r.src==="abo"&&r.cat!=="Investment"?"Abos":r.cat}
+function catKey(r){if(r.src!=="abo")return r.cat;const k=recKind(r.cat);return k==="spar"?"Investment":REC[k].pl}
 function itemHtml(r){
-  const inner=`<span class="t">${esc(r.note||r.cat)}${r.src==="abo"?'<span class="tag">Abo</span>':""}${r.pay==="karte"?'<span class="tag">Karte</span>':""}</span><span class="m">${fmtShort(r.date)}${r.src==="abo"?" · "+esc(r.cat):""}</span><span class="a num">−${eur.format(r.amount)}</span>`;
+  const inner=`<span class="t">${esc(r.note||r.cat)}${r.src==="abo"?`<span class="tag">${REC[recKind(r.cat)].n}</span>`:""}${r.pay==="karte"?'<span class="tag">Karte</span>':""}</span><span class="m">${fmtShort(r.date)}${r.src==="abo"?" · "+esc(r.cat):""}</span><span class="a num">−${eur.format(r.amount)}</span>`;
   return r.src==="abo"?`<button type="button" class="item" data-abo="${r.aboId}">${inner}</button>`:`<button type="button" class="item" data-tx="${r.id}" data-date="${r.date}">${inner}</button>`;
 }
 function renderCats(rows){
-  const opts=[TOTAL,...CATS_OUT,"Abos"];
+  const opts=[TOTAL,...CATS_OUT,"Abos","Verträge","Versicherungen"];
   const sel=$("budgetCat"),cur=sel.value;
   sel.innerHTML=opts.map(k=>`<option value="${esc(k)}">${esc(budgetName(k))}${S.budgets[k]?" ("+eur.format(S.budgets[k])+")":""}</option>`).join("");
   if(cur)sel.value=cur;
@@ -660,23 +679,28 @@ function renderFlow(rows){
   const sal=rows.filter(r=>r.src==="sal").reduce((s,r)=>s+r.amount,0);
   const extra=rows.filter(r=>r.type==="in"&&r.src!=="sal").reduce((s,r)=>s+r.amount,0);
   const out=rows.filter(r=>r.type==="out");
-  const abo=out.filter(r=>catKey(r)==="Abos").reduce((s,r)=>s+r.amount,0);
+  const g=k=>out.filter(r=>r.src==="abo"&&recKind(r.cat)===k).reduce((s,r)=>s+r.amount,0);
+  const abo=g("abo"),vertr=g("vertrag"),vers=g("vers");
   const inv=out.filter(r=>r.cat==="Investment").reduce((s,r)=>s+r.amount,0);
-  const rest=out.reduce((s,r)=>s+r.amount,0)-abo-inv;
-  const bal=sal+extra-abo-inv-rest;
+  const rest=out.reduce((s,r)=>s+r.amount,0)-abo-vertr-vers-inv;
+  const bal=sal+extra-abo-vertr-vers-inv-rest;
+  const neg=v=>v>0?"−"+eur.format(v):eur.format(0);
   const line=(l,v,cls)=>`<div class="fl${cls?" "+cls:""}"><span>${l}</span><span class="num">${v}</span></div>`;
   $("flow").innerHTML=`<div class="label" style="margin:0 4px 8px">${MONTHS[view.m]} ${view.y}</div><div class="ledger">`+
     line("Gehalt",eur.format(sal))+
     line("Sonderzahlungen & Sonstiges",eur.format(extra))+
-    line("Ausgaben",`−${eur.format(rest)}`)+
-    line("Abos",`−${eur.format(abo)}`)+
-    line("Investment",`−${eur.format(inv)}`)+
+    line("Ausgaben",neg(rest))+
+    line("Verträge",neg(vertr))+
+    line("Versicherungen",neg(vers))+
+    line("Abos",neg(abo))+
+    line("Investment",neg(inv))+
     line("Übrig",(bal>0?"+":"")+eur.format(bal),"sum "+(bal<0?"neg":""))+`</div>`+
     (S.gehalt.length?"":`<p class="hint">Noch kein Gehalt hinterlegt. <button type="button" class="linkbtn" id="goSal">Jetzt eintragen</button></p>`);
 }
 /* ---------- Analyse: vermeidbare Ausgaben ---------- */
-const ESSENTIAL=new Set(["Lebensmittel","Wohnen","Gesundheit","Tanken & Auto","ÖPNV & Bahn","Uni & Bücher","Versicherung","Mobilfunk & Internet"]);
-const OPTIONAL_ABO=new Set(["Streaming","Musik","Software & Cloud","Fitness","Mitgliedschaft","Sonstiges"]);
+const ESSENTIAL=new Set(["Lebensmittel","Wohnen","Gesundheit","Tanken & Auto","ÖPNV & Bahn","Uni & Bücher","Verträge","Versicherungen"]);
+const isEssential=r=>r.src==="abo"?["vertrag","vers"].includes(recKind(r.cat)):ESSENTIAL.has(r.cat);
+const OPTIONAL_ABO=new Set(REC.abo.cats.concat(["Sonstiges"]));
 function analyze(rows){
   const F=[];
   const inc=rows.filter(r=>r.type==="in").reduce((s,r)=>s+r.amount,0);
@@ -698,7 +722,7 @@ function analyze(rows){
   const sh=sum(byCat("Shopping"));
   if(inc&&sh>inc*.1)F.push({lvl:"avoid",title:`Shopping: ${Math.round(sh/inc*100)} % deiner Einnahmen`,text:`${eur.format(sh)} in ${MONTHS[view.m]}. Richtwert sind höchstens 10 % (${eur.format(inc*.1)}). Große Wünsche besser erst auf die Wunschliste setzen.`,save:sh-inc*.1,cat:"Shopping"});
   // 5) Abos: doppelte Kategorien
-  const act=S.abos.filter(a=>a.active&&isCostAbo(a));
+  const act=S.abos.filter(a=>a.active&&recKind(a.cat)==="abo");
   const grp={};act.forEach(a=>(grp[a.cat]=grp[a.cat]||[]).push(a));
   Object.entries(grp).forEach(([c,l])=>{if(l.length>=2&&c!=="Versicherung"){const cheap=[...l].sort((a,b)=>perMonth(a)-perMonth(b))[0];
     F.push({lvl:"cut",title:`${l.length} Abos für ${c}`,text:`${l.map(a=>esc(a.name)).join(", ")}. Brauchst du wirklich alle? Ohne ${esc(cheap.name)} sparst du ${eur.format(perMonth(cheap))} im Monat, ${eur.format(perMonth(cheap)*12)} im Jahr.`,save:perMonth(cheap),abo:cheap.id})}});
@@ -725,7 +749,7 @@ function analyze(rows){
   const bal=inc-sum(out),inv=sum(out.filter(r=>r.cat==="Investment"));
   if(inc&&(bal+inv)/inc>=.2)F.push({lvl:"good",title:`Sparquote ${Math.round((bal+inv)/inc*100)} % inklusive Investment`,text:`Mehr als 20 % zurückzulegen ist ein sehr guter Wert.`,save:0});
   if(inv>0)F.push({lvl:"good",title:`${eur.format(inv)} investiert`,text:`Zählt hier nicht als vermeidbar, das ist Vermögensaufbau.`,save:0,cat:"Investment"});
-  const ess=sum(out.filter(r=>ESSENTIAL.has(r.cat)||(r.src==="abo"&&ESSENTIAL.has(r.cat)))),opt2=sum(out)-ess-inv;
+  const ess=sum(out.filter(isEssential)),opt2=sum(out)-ess-inv;
   return {F,ess,opt:opt2,inv,total:sum(out)};
 }
 const LVL={cut:{n:"Unnötig",c:"red"},avoid:{n:"Vermeidbar",c:"orange"},check:{n:"Prüfen",c:"blue"},ok:{n:"Okay",c:"green"},good:{n:"Gut",c:"green"}};
@@ -762,22 +786,32 @@ function renderAbos(){
   const invM=S.abos.filter(a=>a.active&&!isCostAbo(a)).reduce((s,a)=>s+perMonth(a),0);
   $("aboMonth").textContent=eur.format(m);
   $("aboYear").textContent=eur.format(m*12);
-  $("aboCount").textContent=active.length+" / "+S.abos.filter(isCostAbo).length;
-  $("aboInvHint").textContent=invM?`Sparpläne (Kategorie Investment) mit ${eur.format(invM)}/Monat zählen nicht als Abo-Kosten.`:"";
-  const cur=$("aboCat").value;
-  $("aboCat").innerHTML=CATS_ABO.map(c=>`<option>${esc(c)}</option>`).join("");
-  if(cur)$("aboCat").value=cur;
-  $("aboSave").textContent=aboEditing?"Änderung speichern":"Abo hinzufügen";
+  $("aboCount").textContent=eur.format(invM);
+  $("aboInvHint").textContent="Sparpläne zählen als Investment und nicht zu den Fixkosten.";
+  $("kindSum").innerHTML=["abo","vertrag","vers"].map(k=>{const v=S.abos.filter(a=>a.active&&recKind(a.cat)===k).reduce((s,a)=>s+perMonth(a),0);return `<div><span>${REC[k].pl}</span><b class="num">${eur.format(v)}</b></div>`}).join("");
+  $("kindSeg").querySelectorAll("[data-kind]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.kind===aboKind));
+  const cur=$("aboCat").value,cats=REC[aboKind].cats.slice();
+  if(aboEditing){const a=S.abos.find(x=>x.id===aboEditing);if(a&&!cats.includes(a.cat))cats.push(a.cat)}
+  $("aboCat").innerHTML=cats.map(c=>`<option>${esc(c)}</option>`).join("");
+  if(cur&&cats.includes(cur))$("aboCat").value=cur;
+  $("aboCat").closest(".field").hidden=cats.length<2;
+  $("aboName").placeholder=REC[aboKind].ph;
+  $("aboSave").textContent=aboEditing?"Änderung speichern":REC[aboKind].n+" hinzufügen";
   $("aboCancel").hidden=$("aboDelete").hidden=$("aboPause").hidden=!aboEditing;
   if(aboEditing){const a=S.abos.find(x=>x.id===aboEditing);$("aboPause").textContent=a&&a.active?"Pausieren":"Fortsetzen"}
   const el=$("aboList");
-  if(!S.abos.length){el.innerHTML=`<p class="empty">Noch keine Abos. Trag oben Streaming, Handyvertrag, Versicherungen usw. ein.</p>`;return}
-  const sorted=[...S.abos].sort((a,b)=>(b.active-a.active)||(nextCharge(a)||"").localeCompare(nextCharge(b)||""));
-  el.innerHTML=`<div class="day"><div class="dayhead"><span>Nächste Abbuchung</span><span>Betrag</span></div><div class="group">`+sorted.map(a=>{
-    const nx=nextCharge(a);
-    return `<button type="button" class="item ${a.active?"":"paused"}" data-abo="${a.id}"><span class="t">${esc(a.name)}${a.active?"":'<span class="tag">pausiert</span>'}</span><span class="m">${IV[a.interval].l} · ${esc(a.cat)}${a.active&&nx?" · nächste am "+fmtShort(nx):""}</span><span class="a num">${eur.format(a.amount)}${a.interval!=="m"?`<br><span class="m" style="font-size:11px">${eur.format(perMonth(a))}/Monat</span>`:""}</span></button>`;
-  }).join("")+`</div></div>`;
+  if(!S.abos.length){el.innerHTML=`<p class="empty">Noch nichts eingetragen. Wähl oben die Art und trag Abos, Verträge, Versicherungen oder Sparpläne ein.</p>`;return}
+  el.innerHTML=Object.keys(REC).map(k=>{
+    const l=S.abos.filter(a=>recKind(a.cat)===k).sort((a,b)=>(b.active-a.active)||(nextCharge(a)||"").localeCompare(nextCharge(b)||""));
+    if(!l.length)return"";
+    const sum=l.filter(a=>a.active).reduce((s,a)=>s+perMonth(a),0);
+    return `<div class="day"><div class="dayhead"><span>${REC[k].pl}</span><span class="num">${eur.format(sum)}/Monat</span></div><div class="group">`+l.map(a=>{
+      const nx=nextCharge(a);
+      return `<button type="button" class="item ${a.active?"":"paused"}" data-abo="${a.id}"><span class="t">${esc(a.name)}${a.active?"":'<span class="tag">pausiert</span>'}${a.pay==="karte"?'<span class="tag">Karte</span>':""}</span><span class="m">${IV[a.interval].l} · ${esc(a.cat)}${a.active&&nx?" · nächste am "+fmtShort(nx):""}</span><span class="a num">${eur.format(a.amount)}${a.interval!=="m"?`<br><span class="m" style="font-size:11px">${eur.format(perMonth(a))}/Monat</span>`:""}</span></button>`;
+    }).join("")+`</div></div>`;
+  }).join("");
 }
+$("kindSeg").onclick=e=>{const b=e.target.closest("[data-kind]");if(!b)return;aboKind=b.dataset.kind;$("aboCat").value="";render()};
 
 /* ---------- Buchungen ---------- */
 function defaultDate(){const t=todayIso();return t.slice(0,7)===mk()?t:mk()+"-01"}
@@ -855,7 +889,7 @@ function resetAbo(){aboEditing=null;$("aboPay").value="konto";$("aboName").value
 function openAbo(id){
   const a=S.abos.find(x=>x.id===id);if(!a)return;
   tab="abos";aboEditing=id;
-  $("aboPay").value=a.pay||"konto";$("aboName").value=a.name;$("aboAmount").value=fmtIn(a.amount);$("aboInterval").value=a.interval;$("aboStart").value=a.start;
+  aboKind=recKind(a.cat);$("aboPay").value=a.pay||"konto";$("aboName").value=a.name;$("aboAmount").value=fmtIn(a.amount);$("aboInterval").value=a.interval;$("aboStart").value=a.start;
   render();$("aboCat").value=a.cat;$("aboForm").scrollIntoView({behavior:"smooth",block:"start"});
 }
 $("aboForm").onsubmit=async e=>{
