@@ -143,8 +143,8 @@ input::placeholder{color:var(--label3)}
 
 /* ===== Tab-Leiste (unten, schwebend) ===== */
 .tabbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 14px);z-index:10;
-  display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:5px;border-radius:999px;width:min(calc(100vw - 32px),420px)}
-.tabbar button{border:0;background:transparent;border-radius:999px;display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 0 6px;color:var(--label);font-size:10.5px;font-weight:600}
+  display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:5px;border-radius:999px;width:min(calc(100vw - 24px),460px)}
+.tabbar button{border:0;background:transparent;border-radius:999px;display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 0 6px;color:var(--label);font-size:10px;font-weight:600;min-width:0;white-space:nowrap}
 .tabbar svg{width:23px;height:23px}
 .tabbar button[aria-selected="true"]{color:var(--blue);background:var(--fill)}
 
@@ -242,6 +242,49 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
 .kinds div{display:flex;flex-direction:column;gap:1px;padding:0 8px}
 .kinds div:first-child{padding-left:8px}
 .kinds b{color:var(--label);font-weight:600;font-size:15px}
+
+/* v8: Suche, Jahr, Fristen, Ausgelegt, Einstellungen */
+:root{--c-in:#248a3d;--c-out:#007aff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--c-in:#28b04c;--c-out:#0a84ff}}
+:root[data-theme="dark"]{--c-in:#28b04c;--c-out:#0a84ff}
+.search{margin-top:22px}
+.search input[type="search"]{height:40px;border-radius:12px;font-size:16px;padding-left:36px;background-image:radial-gradient(circle at 16px 18px,transparent 5px,var(--label3) 5.5px,var(--label3) 7px,transparent 7.5px),linear-gradient(45deg,transparent 45%,var(--label3) 45%,var(--label3) 58%,transparent 58%);background-size:auto,6px 6px;background-position:0 0,21px 22px;background-repeat:no-repeat}
+.fchips{display:flex;gap:6px;margin:10px -16px 0;padding:0 16px 2px;overflow-x:auto;scrollbar-width:none}
+.fchips::-webkit-scrollbar{display:none}
+.fchips .chip{font-size:14px;padding:6px 12px}
+.chipsel{flex:none;width:auto;height:33px;border-radius:999px;font-size:14px;padding:0 30px 0 12px;background-color:var(--fill);background-position:calc(100% - 17px) 14px,calc(100% - 12px) 14px}
+.chipsel.on{background-color:var(--blue);color:#fff}
+.sres{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:12px 14px;border-radius:16px;margin-top:14px;font-size:14px}
+.sres span{color:var(--label2)}
+.sres .linkbtn{margin-left:auto;font-size:14px}
+#ovSeg{margin:0 0 4px}
+.chart{padding:14px 12px 8px;margin-top:4px}
+.chart .tip{font-size:13px;color:var(--label2);min-height:18px;margin:0 2px 4px}
+.chart .tip b{color:var(--label)}
+.ychart{display:block;width:100%;height:auto;overflow:visible}
+.ychart .grid{stroke:var(--sep);stroke-width:1}
+.ychart .grid.base{stroke:var(--label3)}
+.ychart .ax{fill:var(--label2);font-size:10px;font-family:var(--sans)}
+.ychart .ax.sel{fill:var(--label);font-weight:700}
+.ychart .bi{fill:var(--c-in)} .ychart .bo{fill:var(--c-out)}
+.ychart .hit{fill:transparent;cursor:pointer}
+.ychart .hit:hover{fill:var(--fill2)}
+.tag.hot{background:color-mix(in srgb,var(--red) 18%,transparent);color:var(--red-t)}
+.more.inner{margin-top:14px}
+.more.inner summary{padding:8px 4px;font-size:15px}
+.settings{margin-top:30px}
+.setgroup{padding:0}
+.setrow{position:relative;display:flex;align-items:center;gap:12px;padding:14px 16px}
+.setrow + .setrow::before{content:"";position:absolute;left:16px;right:0;top:0;border-top:.5px solid var(--sep)}
+.setrow>div:first-child{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.setrow b{font-weight:600}
+.setrow span{font-size:13px;color:var(--label2)}
+.setbtns{display:flex;gap:6px;flex:none}
+.btn.small{height:34px;padding:0 14px;font-size:14px;flex:none!important}
+.dayhead b{color:var(--label);font-weight:600}
+.dayhead .linkbtn{font-size:13px;text-transform:none;letter-spacing:0}
+.alerts button.glass{background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);border:1px solid var(--glass-edge);box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
+#yearView .abohead .val{font-size:14px}
 </style>
 
 </head>
@@ -309,10 +352,25 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
 
 
 
-  <section id="pane-list"></section>
+  <section id="pane-list">
+    <div class="search">
+      <input id="q" type="search" placeholder="Suchen: Händler, Notiz, Kategorie, Betrag" autocomplete="off" enterkeyhint="search" aria-label="Buchungen durchsuchen">
+      <div class="fchips" id="fChips">
+        <button type="button" class="chip" data-scope="y" aria-pressed="false">Ganzes Jahr</button>
+        <button type="button" class="chip" data-kind="out" aria-pressed="false">Ausgaben</button>
+        <button type="button" class="chip" data-kind="in" aria-pressed="false">Einnahmen</button>
+        <button type="button" class="chip" data-kind="karte" aria-pressed="false">Kreditkarte</button>
+        <select id="fCat" class="chipsel" aria-label="Nach Kategorie filtern"></select>
+      </div>
+    </div>
+    <div id="listBody"></div>
+  </section>
 
   <!-- Übersicht -->
   <section id="pane-cats" hidden>
+    <div class="seg" id="ovSeg" role="group" aria-label="Zeitraum"><button type="button" data-ov="m">Monat</button><button type="button" data-ov="y">Jahr</button></div>
+    <div id="yearView" hidden></div>
+    <div id="monthView">
     <div class="flow" id="flow"></div>
     <div id="kkBox"></div>
     <h2 class="sec">Analyse</h2>
@@ -329,6 +387,7 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
       </form>
       <p class="hint">Feld leer lassen, um ein Budget zu entfernen. Budgets gelten für jeden Monat. Ab 80 % bekommst du einen Hinweis, darüber eine Warnung.</p>
     </details>
+    </div>
   </section>
 
   <!-- Monatlich: Gehalt + Abos -->
@@ -338,7 +397,7 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
     <form class="card" id="salForm" autocomplete="off">
       <div class="row" style="margin-top:0">
         <div class="field" style="flex:2 1 150px"><label for="salAmount">Netto pro Monat (€)</label><input id="salAmount" class="num" inputmode="decimal" placeholder="z. B. 1.250,00"></div>
-        <div class="field" style="flex:1 1 90px"><label for="salDay">Zahltag</label><input id="salDay" type="number" inputmode="numeric" min="1" max="31" value="1"></div>
+        <div class="field" style="flex:1 1 120px"><label for="salDay">Zahltag</label><select id="salDay"><option value="1">1.</option><option value="2">2.</option><option value="3">3.</option><option value="4">4.</option><option value="5">5.</option><option value="6">6.</option><option value="7">7.</option><option value="8">8.</option><option value="9">9.</option><option value="10">10.</option><option value="11">11.</option><option value="12">12.</option><option value="13">13.</option><option value="14">14.</option><option value="15">15.</option><option value="16">16.</option><option value="17">17.</option><option value="18">18.</option><option value="19">19.</option><option value="20">20.</option><option value="21">21.</option><option value="22">22.</option><option value="23">23.</option><option value="24">24.</option><option value="25">25.</option><option value="26">26.</option><option value="27">27.</option><option value="28">28.</option><option value="29">29.</option><option value="30">30.</option><option value="31" selected>Letzter Tag</option></select></div>
         <div class="field" style="flex:1 1 140px"><label for="salFrom">Gilt ab Monat</label><input id="salFrom" type="month"></div>
       </div>
       <div class="actions">
@@ -357,6 +416,7 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
     </div>
     <div class="kinds" id="kindSum"></div>
     <p class="hint" id="aboInvHint" style="margin:-4px 16px 12px"></p>
+    <div id="deadlines"></div>
     <form class="card" id="aboForm" autocomplete="off">
       <div class="seg seg4" role="group" aria-label="Art" id="kindSeg">
         <button type="button" data-kind="abo">Abo</button><button type="button" data-kind="vertrag">Vertrag</button><button type="button" data-kind="vers">Versich.</button><button type="button" data-kind="spar">Sparplan</button>
@@ -375,6 +435,19 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
         <div class="field"><label for="aboCat">Kategorie</label><select id="aboCat"></select></div>
         <div class="field"><label for="aboPay">Bezahlt über</label><select id="aboPay"><option value="konto">Konto</option><option value="karte">Kreditkarte</option></select></div>
       </div>
+      <details class="more inner" id="contractBox">
+        <summary>Laufzeit &amp; Kündigungsfrist</summary>
+        <div class="row" style="margin-top:4px">
+          <div class="field"><label for="aboEnd">Laufzeit bis</label><input id="aboEnd" type="date"></div>
+          <div class="field"><label for="aboRenew">Danach verlängert um</label><select id="aboRenew">
+            <option value="0">verlängert sich nicht</option><option value="1">1 Monat</option><option value="3">3 Monate</option><option value="6">6 Monate</option><option value="12" selected>12 Monate</option><option value="24">24 Monate</option></select></div>
+        </div>
+        <div class="row">
+          <div class="field" style="flex:1 1 90px"><label for="aboFristW">Kündigungsfrist</label><input id="aboFristW" type="number" inputmode="numeric" min="0" max="36" placeholder="z. B. 3"></div>
+          <div class="field" style="flex:1 1 120px"><label for="aboFristU">Einheit</label><select id="aboFristU"><option value="monate">Monate</option><option value="wochen">Wochen</option><option value="tage">Tage</option></select></div>
+        </div>
+        <p class="hint" style="margin:10px 4px 0" id="contractPreview">Steht im Vertrag, meist „Kündigungsfrist 3 Monate zum Laufzeitende“. Leer lassen, wenn jederzeit kündbar.</p>
+      </details>
       <div class="actions">
         <button class="btn" type="submit" id="aboSave">Hinzufügen</button>
         <button class="btn ghost" type="button" id="aboCancel" hidden>Abbrechen</button>
@@ -410,17 +483,58 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
     <div id="wishList"></div>
   </section>
 
+  <!-- Ausgelegt -->
+  <section id="pane-debt" hidden>
+    <div class="abohead">
+      <div class="glass"><div class="label">Bekommst</div><div class="val num pos" id="debtIn">–</div></div>
+      <div class="glass"><div class="label">Schuldest</div><div class="val num neg" id="debtOut">–</div></div>
+      <div class="glass"><div class="label">Saldo</div><div class="val num" id="debtBal">–</div></div>
+    </div>
+    <form class="card" id="debtForm" autocomplete="off">
+      <div class="seg" role="group" aria-label="Richtung"><button type="button" id="dirIn" aria-pressed="true">Ich bekomme</button><button type="button" id="dirOut" aria-pressed="false">Ich schulde</button></div>
+      <div class="row">
+        <div class="field" style="flex:2 1 150px"><label for="debtPerson">Wer?</label><input id="debtPerson" list="debtPeople" placeholder="z. B. Luis"><datalist id="debtPeople"></datalist></div>
+        <div class="field"><label for="debtAmount">Betrag (€)</label><input id="debtAmount" class="num" inputmode="decimal" placeholder="0,00"></div>
+      </div>
+      <div class="row">
+        <div class="field" style="flex:2 1 150px"><label for="debtNote">Wofür?</label><input id="debtNote" placeholder="z. B. Pizza Spieleabend"></div>
+        <div class="field" style="flex:1 1 140px"><label for="debtDate">Datum</label><input id="debtDate" type="date"></div>
+      </div>
+      <div class="actions">
+        <button class="btn" type="submit" id="debtSave">Eintragen</button>
+        <button class="btn ghost" type="button" id="debtDone" hidden>Erledigt</button>
+        <button class="btn ghost" type="button" id="debtCancel" hidden>Abbrechen</button>
+        <button class="btn danger" type="button" id="debtDelete" hidden>Löschen</button>
+        <span class="err" id="debtErr"></span>
+      </div>
+      <p class="hint" style="margin:10px 4px 0">Ausgelegtes Geld zählt nicht als deine Ausgabe. Hast du für andere mitbezahlt, trag bei der Ausgabe nur deinen eigenen Anteil ein.</p>
+    </form>
+    <div id="debtList"></div>
+  </section>
+
   <nav class="tabbar glass" role="tablist" aria-label="Bereiche">
     <button role="tab" id="tab-list" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg>Buchungen</button>
     <button role="tab" id="tab-cats" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M15 2.6A9 9 0 0 1 21.4 9H15z" fill="currentColor"/></svg>Übersicht</button>
     <button role="tab" id="tab-abos" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M9.5 15.2l1.8 1.8 3.4-3.6"/></svg>Monatlich</button>
     <button role="tab" id="tab-wish" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg>Wünsche</button>
+    <button role="tab" id="tab-debt" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="16.8" cy="9" r="2.6"/><path d="M15.6 14.3c2.6-.3 4.6 1.3 5 4.2"/></svg>Ausgelegt</button>
   </nav>
   <div class="toast glass" id="status" role="status" aria-live="polite"></div>
 
+  <details class="more settings" id="settingsBox">
+    <summary>Einstellungen</summary>
+    <div class="group setgroup">
+      <div class="setrow"><div><b>Erinnerungen</b><span id="pushState">Abends um 20 Uhr, wenn du noch nichts eingetragen hast, plus Kündigungsfristen.</span></div>
+        <div class="setbtns"><button type="button" class="btn small" id="pushOn">Aktivieren</button><button type="button" class="btn small ghost" id="pushTest" hidden>Test</button><button type="button" class="btn small ghost" id="pushOff" hidden>Aus</button></div></div>
+      <div class="setrow"><div><b>Backup</b><span id="backupInfo">Alle Daten als Excel-Datei sichern.</span></div>
+        <div class="setbtns"><button type="button" class="btn small" id="backupBtn">Jetzt sichern</button></div></div>
+      <div class="setrow"><div><b>Export</b><span>Aktuellen Monat als CSV.</span></div>
+        <div class="setbtns"><button type="button" class="btn small ghost" id="exportBtn">CSV</button></div></div>
+    </div>
+  </details>
   <footer>
     <span id="storeInfo"></span>
-    <span class="footlinks"><button id="exportBtn">Monat als CSV</button><button id="logoutBtn">Abmelden</button></span>
+    <span class="footlinks"><button id="logoutBtn">Abmelden</button></span>
   </footer>
   </section>
 
@@ -435,6 +549,7 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
 const SUPABASE_URL      = "https://wnctwjsyfmticbxikjer.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduY3R3anN5Zm10aWNieGlramVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5ODYxNjUsImV4cCI6MjEwNTU2MjE2NX0.cFRV23XE25q_3i_3kErawOQdAoZu2Q7Z7oGfoTt-upk";
 /* ========================================================= */
+const VAPID_PUBLIC_KEY = "BLMbJOkr5P02QNeNwUABWqP1HO2tFiVjDIxPfVa4aWHv0S_rhBV4DmA59EPKAs_6OtGdJbfEUQ6J7CUkv_BtTJs";
 
 const CATS_OUT=["Lebensmittel","Essen & Trinken","Fast Food","Tanken & Auto","ÖPNV & Bahn","Wohnen","Freizeit","Shopping","Investment","Gesundheit","Uni & Bücher","Geschenke","Sonstiges"];
 const CATS_IN=["Sonderzahlung","Nebenjob","Geschenk","Rückzahlung","Verkauf","Sonstiges"];
@@ -465,7 +580,8 @@ const budgetName=k=>k===TOTAL?"Gesamtausgaben":k;
 const dim=(y,m)=>new Date(y,m+1,0).getDate();
 
 /* ---------- state ---------- */
-const S={user:null,months:{},loading:new Set(),abos:[],budgets:{},gehalt:[],wishes:[],openCat:null,settings:{},noPay:false};
+const S={user:null,months:{},loading:new Set(),abos:[],budgets:{},gehalt:[],wishes:[],openCat:null,settings:{},noPay:false,debts:[],noU4:false,years:{},yLoading:new Set()};
+let F={q:"",scope:"m",kind:"all",cat:""},ov="m",debtEditing=null,debtDir="bekomme";
 const lastPay=()=>{try{return localStorage.getItem("hb-pay")==="karte"?"karte":"konto"}catch(e){return"konto"}};
 const now=new Date();
 let view={y:now.getFullYear(),m:now.getMonth()};
@@ -480,10 +596,11 @@ const sb=configured&&window.supabase?window.supabase.createClient(SUPABASE_URL,S
 
 const fromTx=r=>({id:r.id,type:r.typ==="einnahme"?"in":"out",amount:Number(r.betrag),cat:r.kategorie,note:r.notiz||"",date:r.datum,pay:r.zahlart==="karte"?"karte":"konto"});
 const toTx=e=>{const o={id:e.id,user_id:S.user.id,typ:e.type==="in"?"einnahme":"ausgabe",betrag:e.amount,kategorie:e.cat,notiz:e.note,datum:e.date};if(!S.noPay)o.zahlart=e.type==="out"&&e.pay==="karte"?"karte":"konto";return o};
-const fromAbo=r=>({id:r.id,name:r.name,amount:Number(r.betrag),interval:r.intervall,start:r.erste_abbuchung,cat:r.kategorie,active:r.aktiv,pay:r.zahlart==="karte"?"karte":"konto"});
+const fromAbo=r=>({id:r.id,name:r.name,amount:Number(r.betrag),interval:r.intervall,start:r.erste_abbuchung,cat:r.kategorie,active:r.aktiv,pay:r.zahlart==="karte"?"karte":"konto",end:r.laufzeit_ende||"",fristW:r.frist_wert??null,fristU:r.frist_einheit||"monate",renew:r.verlaengerung_monate||0});
+const fromDebt=r=>({id:r.id,person:r.person,amount:Number(r.betrag),dir:r.richtung,note:r.notiz||"",date:r.datum,done:r.erledigt_am||null});
 const fromSal=r=>({id:r.id,amount:Number(r.betrag),day:r.zahltag,from:String(r.gueltig_ab).slice(0,7)});
 const fromWish=r=>({id:r.id,name:r.name,price:Number(r.preis),note:r.notiz||""});
-const toAbo=a=>{const o={id:a.id,user_id:S.user.id,name:a.name,betrag:a.amount,intervall:a.interval,erste_abbuchung:a.start,kategorie:a.cat,aktiv:a.active};if(!S.noPay)o.zahlart=a.pay==="karte"?"karte":"konto";return o};
+const toAbo=a=>{const o={id:a.id,user_id:S.user.id,name:a.name,betrag:a.amount,intervall:a.interval,erste_abbuchung:a.start,kategorie:a.cat,aktiv:a.active};if(!S.noPay)o.zahlart=a.pay==="karte"?"karte":"konto";if(!S.noU4){o.laufzeit_ende=a.end||null;o.frist_wert=a.end&&a.fristW!=null?a.fristW:null;o.frist_einheit=a.end?a.fristU:null;o.verlaengerung_monate=a.end?a.renew:0}return o};
 
 async function loadMonth(k,force){
   if(!force&&(S.months[k]||S.loading.has(k)))return;
@@ -495,13 +612,14 @@ async function loadMonth(k,force){
   S.months[k]=data.map(fromTx);render();
 }
 async function loadStatic(){
-  const [a,b,g,w,st]=await Promise.all([sb.from("abos").select("*").order("created_at"),sb.from("budgets").select("*"),sb.from("gehalt").select("*").order("gueltig_ab"),sb.from("wuensche").select("*").order("created_at"),sb.from("einstellungen").select("*").maybeSingle()]);
+  const [a,b,g,w,st,dt]=await Promise.all([sb.from("abos").select("*").order("created_at"),sb.from("budgets").select("*"),sb.from("gehalt").select("*").order("gueltig_ab"),sb.from("wuensche").select("*").order("created_at"),sb.from("einstellungen").select("*").maybeSingle(),sb.from("schulden").select("*").order("datum",{ascending:false})]);
   if(a.error||b.error){flash("Laden fehlgeschlagen: "+(a.error||b.error).message,true,6000);return}
   S.abos=a.data.map(fromAbo);
   S.budgets=Object.fromEntries(b.data.map(r=>[r.schluessel,Number(r.betrag)]));
   S.needsUpdate=!!(g.error||w.error);
   S.gehalt=g.error?[]:g.data.map(fromSal);
   S.wishes=w.error?[]:w.data.map(fromWish);
+  S.noU4=!!dt.error;S.debts=dt.error?[]:dt.data.map(fromDebt);
   S.noPay=!!st.error;S.settings=(st.data&&st.data.daten)||{};
   render();
 }
@@ -605,8 +723,10 @@ function render(){
   renderFlow(rows);
   if(tab==="cats"){ensureCardMonths();renderCard();renderAnalysis(rows)}
   $("homeTop").hidden=tab!=="list";
-  $("pageTitle").textContent={list:"Buchungen",cats:"Übersicht",abos:"Monatlich",wish:"Wünsche"}[tab];
-  ["list","cats","abos","wish"].forEach(t=>{$("pane-"+t).hidden=tab!==t;$("tab-"+t).setAttribute("aria-selected",tab===t)});
+  renderDebts();renderSettings();renderDeadlines();
+  if(tab==="cats")renderOverviewMode();
+  $("pageTitle").textContent={list:"Buchungen",cats:"Übersicht",abos:"Monatlich",wish:"Wünsche",debt:"Ausgelegt"}[tab];
+  ["list","cats","abos","wish","debt"].forEach(t=>{$("pane-"+t).hidden=tab!==t;$("tab-"+t).setAttribute("aria-selected",tab===t)});
 }
 
 function renderForm(){
@@ -622,25 +742,86 @@ function renderForm(){
   $("txCancel").hidden=$("txDelete").hidden=!tx.editing;
 }
 
+function itemRow(r){
+  const kind=r.src==="abo"?REC[recKind(r.cat)].n:"";
+  const inner=`<span class="t">${esc(r.note||r.cat)}${r.src==="abo"?`<span class="tag">${kind}</span>`:r.src==="sal"?'<span class="tag">Auto</span>':""}${r.pay==="karte"?'<span class="tag">Karte</span>':""}</span><span class="m">${esc(r.cat)}</span><span class="a num ${r.type==="in"?"pos":""}">${r.type==="in"?"+":"−"}${eur.format(r.amount)}</span>`;
+  if(r.src==="sal")return `<button type="button" class="item" data-sal="1" title="Gehalt bearbeiten">${inner}</button>`;
+  return r.src==="abo"?`<button type="button" class="item" data-abo="${r.aboId}" title="Bearbeiten">${inner}</button>`:`<button type="button" class="item" data-tx="${r.id}" data-date="${r.date}" title="Bearbeiten">${inner}</button>`;
+}
+function groupedHtml(rows,withYear){
+  const by={};rows.forEach(r=>(by[r.date]=by[r.date]||[]).push(r));
+  return Object.keys(by).sort().reverse().map(day=>{
+    const list=by[day];const sum=list.reduce((s,r)=>s+(r.type==="in"?r.amount:-r.amount),0);
+    const label=withYear?new Date(day+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"numeric",month:"short",year:"numeric"}):fmtDay(day);
+    return `<div class="day"><div class="dayhead"><span>${label}</span><span class="num">${(sum>0?"+":"")+eur.format(sum)}</span></div><div class="group">`+list.map(itemRow).join("")+`</div></div>`;
+  }).join("");
+}
+const searchActive=()=>!!(F.q.trim()||F.kind!=="all"||F.cat||F.scope==="y");
+function searchRows(){
+  let rows=[];
+  if(F.scope==="y"){for(let m=0;m<12;m++)if(S.months[view.y+"-"+pad(m+1)])rows.push(...rowsFor(view.y,m))}
+  else rows=monthRows();
+  const q=F.q.trim().toLowerCase();
+  return rows.filter(r=>{
+    if(F.kind==="out"&&r.type!=="out")return false;
+    if(F.kind==="in"&&r.type!=="in")return false;
+    if(F.kind==="karte"&&r.pay!=="karte")return false;
+    if(F.cat&&r.cat!==F.cat&&catKey(r)!==F.cat)return false;
+    if(q){const hay=[r.note,r.cat,catKey(r),fmtIn(r.amount),String(r.amount)].join(" ").toLowerCase();if(!q.split(/\s+/).every(w=>hay.includes(w)))return false}
+    return true;
+  });
+}
 function renderList(rows,loaded){
-  const el=$("pane-list");
+  const el=$("listBody");
+  // Filter-Leiste
+  $("fChips").querySelectorAll("[data-kind]").forEach(b=>b.setAttribute("aria-pressed",F.kind===b.dataset.kind));
+  $("fChips").querySelector("[data-scope]").setAttribute("aria-pressed",F.scope==="y");
+  $("fChips").querySelector("[data-scope]").textContent=F.scope==="y"?"Ganzes Jahr "+view.y:"Ganzes Jahr";
+  const fc=$("fCat");if(!fc.options.length){fc.innerHTML=`<option value="">Alle Kategorien</option>`+[...CATS_OUT,"Abos","Verträge","Versicherungen",...CATS_IN,"Gehalt"].filter((v,i,a)=>a.indexOf(v)===i).map(c=>`<option>${esc(c)}</option>`).join("")}
+  fc.value=F.cat;fc.classList.toggle("on",!!F.cat);
+  if(searchActive()){
+    if(F.scope==="y"&&!S.years[view.y]){ensureYear(view.y);el.innerHTML=`<p class="empty">Lade ${view.y}…</p>`;return}
+    const res=searchRows(),out=res.filter(r=>r.type==="out").reduce((s,r)=>s+r.amount,0),inc=res.filter(r=>r.type==="in").reduce((s,r)=>s+r.amount,0);
+    el.innerHTML=`<div class="glass sres"><b>${res.length} ${res.length===1?"Treffer":"Treffer"}</b> <span>${F.scope==="y"?"in "+view.y:"in "+MONTHS[view.m]}</span><span class="num">${out?"Ausgaben "+eur.format(out):""}${out&&inc?" · ":""}${inc?"Einnahmen "+eur.format(inc):""}</span><button type="button" class="linkbtn" id="fReset">Zurücksetzen</button></div>`+
+      (res.length?groupedHtml(res,F.scope==="y"):`<p class="empty">Nichts gefunden.</p>`);
+    return;
+  }
   if(!loaded){el.innerHTML=`<p class="empty">Lade Buchungen…</p>`;return}
   if(!rows.length){el.innerHTML=`<p class="empty">Noch keine Buchungen in ${MONTHS[view.m]}. Trag oben deine erste Ausgabe ein.</p>`;return}
-  const by={};rows.forEach(r=>(by[r.date]=by[r.date]||[]).push(r));
-  el.innerHTML=Object.keys(by).sort().reverse().map(day=>{
-    const list=by[day];const sum=list.reduce((s,r)=>s+(r.type==="in"?r.amount:-r.amount),0);
-    return `<div class="day"><div class="dayhead"><span>${fmtDay(day)}</span><span class="num">${(sum>0?"+":"")+eur.format(sum)}</span></div><div class="group">`+
-      list.map(r=>{
-        const inner=`<span class="t">${esc(r.note||r.cat)}${r.src==="abo"?`<span class="tag">${REC[recKind(r.cat)].n}</span>`:r.src==="sal"?'<span class="tag">Auto</span>':""}${r.pay==="karte"?'<span class="tag">Karte</span>':""}</span><span class="m">${esc(r.cat)}</span><span class="a num ${r.type==="in"?"pos":""}">${r.type==="in"?"+":"−"}${eur.format(r.amount)}</span>`;
-        if(r.src==="sal")return `<button type="button" class="item" data-sal="1" title="Gehalt bearbeiten">${inner}</button>`;
-        return r.src==="abo"?`<button type="button" class="item" data-abo="${r.aboId}" title="Abo bearbeiten">${inner}</button>`:`<button type="button" class="item" data-tx="${r.id}" data-date="${r.date}" title="Bearbeiten">${inner}</button>`;
-      }).join("")+`</div></div>`;
-  }).join("");
+  el.innerHTML=groupedHtml(rows,false);
+}
+let qT;
+$("q").oninput=()=>{clearTimeout(qT);qT=setTimeout(()=>{F.q=$("q").value;render()},180)};
+$("fChips").onclick=e=>{
+  const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.scope){F.scope=F.scope==="y"?"m":"y";if(F.scope==="y")ensureYear(view.y)}
+  if(b.dataset.kind)F.kind=F.kind===b.dataset.kind?"all":b.dataset.kind;
+  render();
+};
+$("fCat").onchange=()=>{F.cat=$("fCat").value;render()};
+$("listBody").addEventListener("click",e=>{if(e.target.id==="fReset"){F={q:"",scope:"m",kind:"all",cat:""};$("q").value="";render()}});
+
+/* ---------- Jahr laden (in Seiten zu 1000) ---------- */
+async function ensureYear(y){
+  if(S.years[y]||S.yLoading.has(y))return;
+  S.yLoading.add(y);
+  const all=[];
+  for(let off=0;;off+=1000){
+    const {data,error}=await sb.from("buchungen").select("*").gte("datum",y+"-01-01").lte("datum",y+"-12-31").order("datum").range(off,off+999);
+    if(error){S.yLoading.delete(y);flash("Laden fehlgeschlagen: "+error.message,true,6000);return}
+    all.push(...data);if(data.length<1000)break;
+  }
+  for(let m=1;m<=12;m++)S.months[y+"-"+pad(m)]=[];
+  all.map(fromTx).forEach(r=>S.months[r.date.slice(0,7)].push(r));
+  S.years[y]=true;S.yLoading.delete(y);render();
 }
 
 function renderAlerts(rows){
   const list=budgetStates(rows).filter(x=>x.level!=="ok").sort((a,b)=>b.p-a.p);
-  $("alerts").innerHTML=list.map(x=>`<button type="button" data-goto="cats" class="glass ${x.level}"><span class="dot"></span><span class="txt"><b>${esc(budgetName(x.k))}: ${x.level==="over"?"Budget überschritten":"Budget fast erreicht"}</b><span class="num">${Math.round(x.p*100)} % · ${eur.format(x.s)} von ${eur.format(x.b)}</span></span></button>`).join("");
+  const dl=upcomingDeadlines(30);
+  const bk=backupDue();
+  $("alerts").innerHTML=dl.map(d=>`<button type="button" data-abo="${d.a.id}" class="glass ${d.days<=7?"over":"near"}"><span class="dot"></span><span class="txt"><b>${esc(d.a.name)}: ${d.days===0?"heute letzter Kündigungstag":`noch ${d.days} ${d.days===1?"Tag":"Tage"} kündbar`}</b><span>bis ${fmtShort(d.dl)} · Laufzeit bis ${fmtShort(d.end)}</span></span></button>`).join("")+
+    (bk?`<button type="button" data-backup="1" class="glass near"><span class="dot"></span><span class="txt"><b>Backup fällig</b><span>${bk}</span></span></button>`:"")+list.map(x=>`<button type="button" data-goto="cats" class="glass ${x.level}"><span class="dot"></span><span class="txt"><b>${esc(budgetName(x.k))}: ${x.level==="over"?"Budget überschritten":"Budget fast erreicht"}</b><span class="num">${Math.round(x.p*100)} % · ${eur.format(x.s)} von ${eur.format(x.b)}</span></span></button>`).join("");
 }
 
 function catKey(r){if(r.src!=="abo")return r.cat;const k=recKind(r.cat);return k==="spar"?"Investment":REC[k].pl}
@@ -807,7 +988,7 @@ function renderAbos(){
     const sum=l.filter(a=>a.active).reduce((s,a)=>s+perMonth(a),0);
     return `<div class="day"><div class="dayhead"><span>${REC[k].pl}</span><span class="num">${eur.format(sum)}/Monat</span></div><div class="group">`+l.map(a=>{
       const nx=nextCharge(a);
-      return `<button type="button" class="item ${a.active?"":"paused"}" data-abo="${a.id}"><span class="t">${esc(a.name)}${a.active?"":'<span class="tag">pausiert</span>'}${a.pay==="karte"?'<span class="tag">Karte</span>':""}</span><span class="m">${IV[a.interval].l} · ${esc(a.cat)}${a.active&&nx?" · nächste am "+fmtShort(nx):""}</span><span class="a num">${eur.format(a.amount)}${a.interval!=="m"?`<br><span class="m" style="font-size:11px">${eur.format(perMonth(a))}/Monat</span>`:""}</span></button>`;
+      return `<button type="button" class="item ${a.active?"":"paused"}" data-abo="${a.id}"><span class="t">${esc(a.name)}${a.active?"":'<span class="tag">pausiert</span>'}${a.pay==="karte"?'<span class="tag">Karte</span>':""}</span><span class="m">${IV[a.interval].l} · ${esc(a.cat)}${a.active&&nx?" · nächste am "+fmtShort(nx):""}${a.end?(()=>{const ci=contractInfo(a);return ci.missed?" · endet "+fmtShort(ci.end):" · kündbar bis "+fmtShort(ci.dl)})():""}</span><span class="a num">${eur.format(a.amount)}${a.interval!=="m"?`<br><span class="m" style="font-size:11px">${eur.format(perMonth(a))}/Monat</span>`:""}</span></button>`;
     }).join("")+`</div></div>`;
   }).join("");
 }
@@ -882,14 +1063,17 @@ $("budgetForm").onsubmit=async e=>{
   await write(sb.from("budgets").upsert({user_id:S.user.id,schluessel:k,betrag:v},{onConflict:"user_id,schluessel"}),loadStatic);
 };
 $("budgetCat").onchange=()=>{const v=S.budgets[$("budgetCat").value];$("budgetAmount").value=v?fmtIn(v):""};
-$("alerts").onclick=e=>{if(e.target.closest("[data-goto]")){tab="cats";render();window.scrollTo({top:0})}};
+$("alerts").onclick=e=>{
+  const ab=e.target.closest("[data-abo]");if(ab){openAbo(ab.dataset.abo);return}
+  if(e.target.closest("[data-backup]")){doBackup();return}
+  if(e.target.closest("[data-goto]")){tab="cats";render();window.scrollTo({top:0})}};
 
 /* ---------- Abos ---------- */
-function resetAbo(){aboEditing=null;$("aboPay").value="konto";$("aboName").value="";$("aboAmount").value="";$("aboInterval").value="m";$("aboStart").value=todayIso();$("aboErr").textContent="";render()}
+function resetAbo(){aboEditing=null;$("aboPay").value="konto";$("aboEnd").value="";$("aboFristW").value="";$("aboFristU").value="monate";$("aboRenew").value="12";$("contractBox").open=false;$("aboName").value="";$("aboAmount").value="";$("aboInterval").value="m";$("aboStart").value=todayIso();$("aboErr").textContent="";render()}
 function openAbo(id){
   const a=S.abos.find(x=>x.id===id);if(!a)return;
   tab="abos";aboEditing=id;
-  aboKind=recKind(a.cat);$("aboPay").value=a.pay||"konto";$("aboName").value=a.name;$("aboAmount").value=fmtIn(a.amount);$("aboInterval").value=a.interval;$("aboStart").value=a.start;
+  aboKind=recKind(a.cat);$("aboPay").value=a.pay||"konto";$("aboEnd").value=a.end||"";$("aboFristW").value=a.fristW??"";$("aboFristU").value=a.fristU||"monate";$("aboRenew").value=String(a.end?a.renew:12);$("contractBox").open=!!a.end;$("aboName").value=a.name;$("aboAmount").value=fmtIn(a.amount);$("aboInterval").value=a.interval;$("aboStart").value=a.start;
   render();$("aboCat").value=a.cat;$("aboForm").scrollIntoView({behavior:"smooth",block:"start"});
 }
 $("aboForm").onsubmit=async e=>{
@@ -898,7 +1082,9 @@ $("aboForm").onsubmit=async e=>{
   if(!name){$("aboErr").textContent="Bitte einen Namen eingeben.";$("aboName").focus();return}
   if(isNaN(amount)){$("aboErr").textContent="Bitte einen Betrag über 0 eingeben.";$("aboAmount").focus();return}
   if(!start){$("aboErr").textContent="Bitte das Datum der ersten Abbuchung wählen.";return}
-  const body={name,amount,interval:$("aboInterval").value,start,cat:$("aboCat").value,pay:$("aboPay").value};
+  const fw=$("aboFristW").value.trim();
+  const body={name,amount,interval:$("aboInterval").value,start,cat:$("aboCat").value,pay:$("aboPay").value,end:$("aboEnd").value||"",fristW:fw===""?null:Math.max(0,parseInt(fw,10)||0),fristU:$("aboFristU").value,renew:parseInt($("aboRenew").value,10)||0};
+  if(body.end&&S.noU4){$("aboErr").textContent="Für Laufzeiten bitte zuerst supabase-update-4.sql ausführen.";return}
   let abo;
   if(aboEditing){abo={...S.abos.find(a=>a.id===aboEditing),...body};S.abos=S.abos.map(a=>a.id===abo.id?abo:a)}
   else{abo={id:newId(),active:true,...body};S.abos=[...S.abos,abo]}
@@ -920,17 +1106,17 @@ function renderSalary(){
   const k=now.getFullYear()+"-"+pad(now.getMonth()+1);
   const upcoming=S.gehalt.filter(g=>g.from>k).sort((a,b)=>a.from.localeCompare(b.from))[0];
   $("salaryNow").innerHTML=S.needsUpdate?`<p class="hint err" style="margin:0 4px 12px">Für Gehalt und Wünsche fehlt noch das Datenbank-Update. Bitte supabase-update-2.sql im SQL Editor ausführen.</p>`:
-    (cur?`<div class="salbig"><span class="big num">${eur.format(cur.amount)}</span><span class="sub">netto, jeden Monat am ${cur.day}.${upcoming?` · ab ${fmtMonth(upcoming.from)}: ${eur.format(upcoming.amount)}`:""}</span></div>`
+    (cur?`<div class="salbig"><span class="big num">${eur.format(cur.amount)}</span><span class="sub">netto, ${cur.day>=31?"am letzten Tag jedes Monats":"jeden Monat am "+cur.day+"."}${upcoming?` · ab ${fmtMonth(upcoming.from)}: ${eur.format(upcoming.amount)}`:""}</span></div>`
         :`<p class="hint" style="margin:0 4px 12px">${upcoming?`Ab ${fmtMonth(upcoming.from)}: ${eur.format(upcoming.amount)}.`:"Noch kein Gehalt hinterlegt."}</p>`);
   const h=$("salHistory");
   if(S.gehalt.length<1){h.innerHTML="";return}
   h.innerHTML=`<div class="day"><div class="dayhead"><span>Verlauf</span><span>Netto</span></div><div class="group">`+[...S.gehalt].sort((a,b)=>b.from.localeCompare(a.from)).map(g=>
-    `<div class="item"><span class="t">ab ${fmtMonth(g.from)}</span><span class="m">Zahltag ${g.day}.</span><span class="a"><span class="num">${eur.format(g.amount)}</span> <button type="button" class="linkbtn" data-delsal="${g.id}" aria-label="Eintrag löschen">Löschen</button></span></div>`).join("")+`</div></div>`;
+    `<div class="item"><span class="t">ab ${fmtMonth(g.from)}</span><span class="m">${g.day>=31?"am Monatsende":"Zahltag "+g.day+"."}</span><span class="a"><span class="num">${eur.format(g.amount)}</span> <button type="button" class="linkbtn" data-delsal="${g.id}" aria-label="Eintrag löschen">Löschen</button></span></div>`).join("")+`</div></div>`;
 }
 function openSalary(){
   tab="abos";render();
   const cur=salaryFor(view.y,view.m);
-  if(cur){$("salAmount").value=fmtIn(cur.amount);$("salDay").value=cur.day}
+  if(cur){$("salAmount").value=fmtIn(cur.amount);$("salDay").value=String(cur.day)}
   $("salFrom").value=mk();
   $("salForm").scrollIntoView({behavior:"smooth",block:"start"});
 }
@@ -1097,10 +1283,233 @@ $("themeBtn").onclick=()=>{
 };
 applyTheme(getTheme());
 
+/* ---------- Laufzeiten & Kündigungsfristen ---------- */
+function addMonthsIso(isoD,n){const [y,m,d]=isoD.split("-").map(Number);const t=new Date(y,m-1+n,1);return iso(new Date(t.getFullYear(),t.getMonth(),Math.min(d,dim(t.getFullYear(),t.getMonth()))))}
+function addDaysIso(isoD,n){const [y,m,d]=isoD.split("-").map(Number);return iso(new Date(y,m-1,d+n))}
+function contractInfo(a){
+  if(!a.end)return null;
+  const n=a.fristW||0,u=a.fristU||"monate";
+  const minus=e=>u==="tage"?addDaysIso(e,-n):u==="wochen"?addDaysIso(e,-7*n):addMonthsIso(e,-n);
+  const t=todayIso();let end=a.end,dl=minus(end);
+  for(let i=0;a.renew>0&&dl<t&&i<600;i++){end=addMonthsIso(end,a.renew);dl=minus(end)}
+  const days=Math.round((new Date(dl+"T12:00:00")-new Date(t+"T12:00:00"))/864e5);
+  return {end,dl,days,expired:!a.renew&&end<t,missed:!a.renew&&dl<t};
+}
+function upcomingDeadlines(maxDays){
+  return S.abos.filter(a=>a.active&&a.end).map(a=>({a,...contractInfo(a)})).filter(x=>!x.missed&&x.days>=0&&x.days<=maxDays).sort((a,b)=>a.days-b.days);
+}
+function renderDeadlines(){
+  const el=$("deadlines");
+  const l=S.abos.filter(a=>a.active&&a.end).map(a=>({a,...contractInfo(a)})).filter(x=>!x.expired).sort((a,b)=>a.dl.localeCompare(b.dl));
+  if(!l.length){el.innerHTML="";return}
+  el.innerHTML=`<div class="day" style="margin-top:0"><div class="dayhead"><span>Kündigungsfristen</span><span>kündbar bis</span></div><div class="group">`+l.slice(0,6).map(x=>
+    `<button type="button" class="item" data-abo="${x.a.id}"><span class="t">${esc(x.a.name)}${x.days>=0&&x.days<=30?`<span class="tag ${x.days<=7?"hot":""}">${x.days===0?"heute":x.days+" T."}</span>`:""}</span><span class="m">${x.missed?"Frist verpasst · endet ":"Laufzeit bis "}${fmtShort(x.end)}${x.a.renew?` · verlängert sich um ${x.a.renew} Mon.`:""}</span><span class="a num">${x.missed?"–":fmtShort(x.dl)}</span></button>`).join("")+`</div></div>`;
+}
+$("deadlines").onclick=e=>{const b=e.target.closest("[data-abo]");if(b)openAbo(b.dataset.abo)};
+function updateContractPreview(){
+  const end=$("aboEnd").value;if(!end){$("contractPreview").textContent="Steht im Vertrag, meist „Kündigungsfrist 3 Monate zum Laufzeitende“. Leer lassen, wenn jederzeit kündbar.";return}
+  const ci=contractInfo({end,fristW:parseInt($("aboFristW").value,10)||0,fristU:$("aboFristU").value,renew:parseInt($("aboRenew").value,10)||0});
+  $("contractPreview").textContent=ci.missed?`Die Frist ist verpasst, der Vertrag endet am ${fmtShort(ci.end)}.`:`Kündbar bis ${fmtShort(ci.dl)}${ci.end!==end?` (für die Laufzeit bis ${fmtShort(ci.end)})`:""}. Die App erinnert dich 30, 14, 7, 3 und 1 Tag vorher.`;
+}
+["aboEnd","aboFristW","aboFristU","aboRenew"].forEach(id=>$(id).addEventListener("input",updateContractPreview));
+$("contractBox").addEventListener("toggle",updateContractPreview);
+
+/* ---------- Übersicht: Monat / Jahr ---------- */
+function renderOverviewMode(){
+  $("ovSeg").querySelectorAll("[data-ov]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.ov===ov));
+  $("monthView").hidden=ov!=="m";$("yearView").hidden=ov!=="y";
+  if(ov==="y")renderYear();
+}
+$("ovSeg").onclick=e=>{const b=e.target.closest("[data-ov]");if(!b)return;ov=b.dataset.ov;if(ov==="y")ensureYear(view.y);render()};
+function yearMonths(y){const lastM=y<now.getFullYear()?11:y===now.getFullYear()?now.getMonth():-1;const out=[];for(let m=0;m<=lastM;m++){const rows=rowsFor(y,m);out.push({m,rows,inc:rows.filter(r=>r.type==="in").reduce((s,r)=>s+r.amount,0),out:rows.filter(r=>r.type==="out").reduce((s,r)=>s+r.amount,0)})}return out}
+let yearSel=null;
+function renderYear(){
+  const el=$("yearView"),y=view.y;
+  if(!S.years[y]){ensureYear(y);el.innerHTML=`<p class="empty">Lade ${y}…</p>`;return}
+  const ms=yearMonths(y);
+  if(!ms.length){el.innerHTML=`<p class="empty">${y} liegt noch in der Zukunft.</p>`;return}
+  const inc=ms.reduce((s,x)=>s+x.inc,0),out=ms.reduce((s,x)=>s+x.out,0),bal=inc-out;
+  const inv=ms.reduce((s,x)=>s+x.rows.filter(r=>r.type==="out"&&catKey(r)==="Investment").reduce((a,r)=>a+r.amount,0),0);
+  // Chart
+  const W=340,H=190,L=34,R=6,T=14,B=24,cw=(W-L-R)/12,bw=Math.min(9,cw/2-2);
+  const max=Math.max(1,...ms.map(x=>Math.max(x.inc,x.out)));
+  const step=[50,100,200,250,500,1000,2000,2500,5000,10000].find(s=>max/s<=4)||Math.ceil(max/4);
+  const top=Math.ceil(max/step)*step,Y=v=>T+(H-T-B)*(1-v/top);
+  const bar=(x,v,cls)=>{if(v<=0)return"";const y0=Y(0),y1=Math.min(Y(v),y0-2),r=Math.min(3,bw/2,(y0-y1)/2);return `<path class="${cls}" d="M${x},${y0}V${y1+r}Q${x},${y1} ${x+r},${y1}H${x+bw-r}Q${x+bw},${y1} ${x+bw},${y1+r}V${y0}Z"/>`};
+  let g="";for(let v=0;v<=top;v+=step){g+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" class="grid${v===0?" base":""}"/><text x="${L-6}" y="${Y(v)+3.5}" class="ax" text-anchor="end">${v>=1000?(v/1000).toLocaleString("de-DE")+"k":v}</text>`}
+  let bars="",hits="";
+  for(let m=0;m<12;m++){const x0=L+m*cw,d=ms[m];
+    g+=`<text x="${x0+cw/2}" y="${H-7}" class="ax${yearSel===m?" sel":""}" text-anchor="middle">${"JFMAMJJASOND"[m]}</text>`;
+    if(d){bars+=bar(x0+cw/2-bw-1,d.inc,"bi")+bar(x0+cw/2+1,d.out,"bo");hits+=`<rect x="${x0}" y="${T}" width="${cw}" height="${H-T-B}" class="hit" data-m="${m}"><title>${MONTHS[m]}: Einnahmen ${eur.format(d.inc)}, Ausgaben ${eur.format(d.out)}</title></rect>`}}
+  const sel=yearSel!=null&&ms[yearSel]?ms[yearSel]:null;
+  const cats={};ms.forEach(x=>x.rows.filter(r=>r.type==="out").forEach(r=>{const k=catKey(r);cats[k]=(cats[k]||0)+r.amount}));
+  const cl=Object.entries(cats).sort((a,b)=>b[1]-a[1]),cmax=cl.length?cl[0][1]:1;
+  el.innerHTML=`<div class="abohead" style="margin-top:14px">
+      <div class="glass"><div class="label">Einnahmen</div><div class="val num pos">${eur.format(inc)}</div></div>
+      <div class="glass"><div class="label">Ausgaben</div><div class="val num">${eur.format(out)}</div></div>
+      <div class="glass"><div class="label">Übrig</div><div class="val num ${bal<0?"neg":""}">${eur.format(bal)}</div></div></div>
+    <p class="hint" style="margin:-4px 16px 12px">Sparquote ${inc?Math.round(bal/inc*100):0} %${inv?` · plus ${eur.format(inv)} investiert`:""} · ${ms.length} ${ms.length===1?"Monat":"Monate"}${y===now.getFullYear()?" bis heute":""}</p>
+    <div class="card chart">
+      <div class="legend" style="margin:0 0 6px"><span><b style="background:var(--c-in)"></b>Einnahmen</span><span><b style="background:var(--c-out)"></b>Ausgaben</span></div>
+      <div class="tip" id="yTip">${sel?`<b>${MONTHS[yearSel]}</b> · Einnahmen <span class="num">${eur.format(sel.inc)}</span> · Ausgaben <span class="num">${eur.format(sel.out)}</span>`:"Tipp auf einen Monat für Details."}</div>
+      <svg viewBox="0 0 ${W} ${H}" class="ychart" role="img" aria-label="Einnahmen und Ausgaben pro Monat ${y}">${g}${bars}${hits}</svg>
+    </div>
+    <div class="day"><div class="dayhead"><span>Monate</span><span>Übrig</span></div><div class="group">`+ms.slice().reverse().map(x=>{const b2=x.inc-x.out;
+      return `<button type="button" class="item" data-gom="${x.m}"><span class="t">${MONTHS[x.m]}</span><span class="m num">+${eur.format(x.inc)} · −${eur.format(x.out)}</span><span class="a num ${b2<0?"neg":"pos"}">${(b2>0?"+":"")+eur.format(b2)}</span></button>`}).join("")+`</div></div>
+    <h2 class="sec">Kategorien ${y}</h2>
+    <div class="cats">`+cl.map(([k,v])=>`<div class="cat"><span class="top"><span>${esc(k)}<span class="cnt">Ø ${eur.format(v/ms.length)} pro Monat</span></span><span class="num">${eur.format(v)} · ${out?Math.round(v/out*100):0} %</span></span><span class="bar free"><i style="width:${(v/cmax*100).toFixed(1)}%"></i></span></div>`).join("")+`</div>`;
+}
+$("yearView").onclick=e=>{
+  const h=e.target.closest("[data-m]");if(h){yearSel=+h.dataset.m===yearSel?null:+h.dataset.m;renderYear();return}
+  const g=e.target.closest("[data-gom]");if(g){view={y:view.y,m:+g.dataset.gom};ov="m";loadMonth(mk());render();window.scrollTo({top:0})}
+};
+
+/* ---------- Ausgelegtes Geld ---------- */
+function renderDebts(){
+  const open=S.debts.filter(d=>!d.done);
+  const inS=open.filter(d=>d.dir==="bekomme").reduce((s,d)=>s+d.amount,0),outS=open.filter(d=>d.dir==="schulde").reduce((s,d)=>s+d.amount,0),bal=inS-outS;
+  $("debtIn").textContent=eur.format(inS);$("debtOut").textContent=eur.format(outS);
+  $("debtBal").textContent=(bal>0?"+":"")+eur.format(bal);$("debtBal").className="val num "+(bal>0?"pos":bal<0?"neg":"");
+  $("dirIn").setAttribute("aria-pressed",debtDir==="bekomme");$("dirOut").setAttribute("aria-pressed",debtDir==="schulde");
+  $("debtSave").textContent=debtEditing?"Änderung speichern":"Eintragen";
+  const ed=debtEditing&&S.debts.find(d=>d.id===debtEditing);
+  $("debtDone").hidden=$("debtCancel").hidden=$("debtDelete").hidden=!debtEditing;
+  if(ed)$("debtDone").textContent=ed.done?"Wieder offen":(ed.dir==="bekomme"?"Zurückbekommen":"Zurückgezahlt");
+  $("debtPeople").innerHTML=[...new Set(S.debts.map(d=>d.person))].map(p=>`<option value="${esc(p)}">`).join("");
+  const el=$("debtList");
+  if(S.noU4){el.innerHTML=`<p class="hint err" style="margin:14px 16px">Bitte zuerst supabase-update-4.sql im SQL Editor ausführen.</p>`;return}
+  if(!S.debts.length){el.innerHTML=`<p class="empty">Noch nichts ausgelegt. Trag oben ein, wenn du für jemanden bezahlt hast oder dir jemand etwas ausgelegt hat.</p>`;return}
+  const people={};open.forEach(d=>(people[d.person]=people[d.person]||[]).push(d));
+  const row=d=>`<button type="button" class="item ${d.done?"paused":""}" data-debt="${d.id}"><span class="t">${esc(d.note||(d.dir==="bekomme"?"ausgelegt":"geliehen"))}${d.done?'<span class="tag">erledigt</span>':""}</span><span class="m">${fmtShort(d.date)}${d.done?" · erledigt am "+fmtShort(d.done):""}</span><span class="a num ${d.dir==="bekomme"?"pos":"neg"}">${d.dir==="bekomme"?"+":"−"}${eur.format(d.amount)}</span></button>`;
+  let html=Object.entries(people).sort((a,b)=>a[0].localeCompare(b[0],"de")).map(([p,l])=>{
+    const net=l.reduce((s,d)=>s+(d.dir==="bekomme"?d.amount:-d.amount),0);
+    return `<div class="day"><div class="dayhead"><span>${esc(p)} · ${net>=0?"schuldet dir":"du schuldest"} <b class="num">${eur.format(Math.abs(net))}</b></span><button type="button" class="linkbtn" data-settle="${esc(p)}">Alles erledigt</button></div><div class="group">`+l.map(row).join("")+`</div></div>`}).join("");
+  if(!open.length)html=`<p class="empty">Alles ausgeglichen.</p>`;
+  const done=S.debts.filter(d=>d.done).slice(0,30);
+  if(done.length)html+=`<details class="more"><summary>Erledigt (${done.length})</summary><div class="group">${done.map(row).join("")}</div></details>`;
+  el.innerHTML=html;
+}
+function resetDebt(){debtEditing=null;$("debtPerson").value="";$("debtAmount").value="";$("debtNote").value="";$("debtDate").value=todayIso();$("debtErr").textContent="";render()}
+$("dirIn").onclick=()=>{debtDir="bekomme";renderDebts()};$("dirOut").onclick=()=>{debtDir="schulde";renderDebts()};
+$("debtForm").onsubmit=async e=>{
+  e.preventDefault();
+  const person=$("debtPerson").value.trim(),amount=parseAmt($("debtAmount").value),date=$("debtDate").value||todayIso(),note=$("debtNote").value.trim();
+  if(!person){$("debtErr").textContent="Bitte eintragen, um wen es geht.";$("debtPerson").focus();return}
+  if(isNaN(amount)){$("debtErr").textContent="Bitte einen Betrag über 0 eingeben.";$("debtAmount").focus();return}
+  const old=debtEditing&&S.debts.find(d=>d.id===debtEditing);
+  const d={id:debtEditing||newId(),person,amount,dir:debtDir,note,date,done:old?old.done:null};
+  S.debts=old?S.debts.map(x=>x.id===d.id?d:x):[d,...S.debts];const editing=!!old;resetDebt();
+  const row={id:d.id,user_id:S.user.id,person,betrag:amount,richtung:d.dir,notiz:note,datum:date,erledigt_am:d.done};
+  await write(editing?sb.from("schulden").update(row).eq("id",d.id):sb.from("schulden").insert(row),loadStatic);
+};
+$("debtCancel").onclick=resetDebt;
+$("debtDelete").onclick=async()=>{const id=debtEditing;S.debts=S.debts.filter(d=>d.id!==id);resetDebt();await write(sb.from("schulden").delete().eq("id",id),loadStatic)};
+$("debtDone").onclick=async()=>{const d=S.debts.find(x=>x.id===debtEditing);if(!d)return;const done=d.done?null:todayIso();
+  S.debts=S.debts.map(x=>x.id===d.id?{...x,done}:x);resetDebt();await write(sb.from("schulden").update({erledigt_am:done}).eq("id",d.id),loadStatic)};
+$("debtList").onclick=async e=>{
+  const s2=e.target.closest("[data-settle]");
+  if(s2){const p=s2.dataset.settle,ids=S.debts.filter(d=>!d.done&&d.person===p).map(d=>d.id),t=todayIso();
+    S.debts=S.debts.map(d=>ids.includes(d.id)?{...d,done:t}:d);render();
+    await write(sb.from("schulden").update({erledigt_am:t}).in("id",ids),loadStatic);return}
+  const b=e.target.closest("[data-debt]");if(!b)return;
+  const d=S.debts.find(x=>x.id===b.dataset.debt);if(!d)return;
+  debtEditing=d.id;debtDir=d.dir;$("debtPerson").value=d.person;$("debtAmount").value=fmtIn(d.amount);$("debtNote").value=d.note;$("debtDate").value=d.date;render();
+  $("debtForm").scrollIntoView({behavior:"smooth",block:"start"});
+};
+
+/* ---------- Einstellungen: Push ---------- */
+const pushSupported=()=>"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
+const isStandalone=()=>window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+let pushSub=null;
+async function refreshPush(){
+  if(!pushSupported()){pushSub=null;return}
+  try{const reg=await navigator.serviceWorker.ready;pushSub=await reg.pushManager.getSubscription()}catch(e){pushSub=null}
+  renderSettings();
+}
+function renderSettings(){
+  const st=$("pushState");
+  const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
+  if(S.noU4){st.textContent="Bitte zuerst supabase-update-4.sql ausführen.";$("pushOn").hidden=true;$("pushTest").hidden=$("pushOff").hidden=true}
+  else if(!pushSupported()||(isIOS&&!isStandalone())){st.textContent=isIOS?"Nur in der App vom Home-Bildschirm möglich (nicht in Safari). Öffne die App über ihr Symbol.":"Dieser Browser unterstützt keine Push-Benachrichtigungen.";$("pushOn").hidden=true;$("pushTest").hidden=$("pushOff").hidden=true}
+  else if(pushSub){st.textContent="Aktiv auf diesem Gerät: 20 Uhr, wenn noch nichts eingetragen ist, plus Kündigungsfristen und offenes ausgelegtes Geld (sonntags).";$("pushOn").hidden=true;$("pushTest").hidden=$("pushOff").hidden=false}
+  else{st.textContent=Notification.permission==="denied"?"Benachrichtigungen sind blockiert. Erlaube sie in den iPhone-Einstellungen unter Mitteilungen → Haushaltsbuch.":"Abends um 20 Uhr, wenn du noch nichts eingetragen hast, plus Kündigungsfristen.";$("pushOn").hidden=false;$("pushTest").hidden=$("pushOff").hidden=true}
+  const lb=S.settings&&S.settings.lastBackup;
+  $("backupInfo").textContent=lb?`Letztes Backup am ${fmtShort(lb)}. Zusätzlich speichert Supabase am 1. jedes Monats automatisch eine Kopie.`:"Alle Daten als Excel-Datei sichern. Zusätzlich speichert Supabase am 1. jedes Monats automatisch eine Kopie.";
+}
+function urlB64ToUint8(b){const p="=".repeat((4-b.length%4)%4),s=atob((b+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from([...s].map(c=>c.charCodeAt(0)))}
+$("pushOn").onclick=async()=>{
+  try{
+    const perm=await Notification.requestPermission();
+    if(perm!=="granted"){flash("Benachrichtigungen nicht erlaubt.",true,4000);renderSettings();return}
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64ToUint8(VAPID_PUBLIC_KEY)});
+    const j=sub.toJSON();
+    const ok=await write(sb.from("push_abos").upsert({user_id:S.user.id,endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth},{onConflict:"endpoint"}),async()=>{});
+    if(ok)flash("Erinnerungen aktiviert",false,3000);
+    pushSub=sub;renderSettings();
+  }catch(e){flash("Aktivieren fehlgeschlagen: "+(e.message||e),true,6000)}
+};
+$("pushOff").onclick=async()=>{
+  if(!pushSub)return;const ep=pushSub.endpoint;
+  try{await pushSub.unsubscribe()}catch(e){}
+  pushSub=null;renderSettings();await write(sb.from("push_abos").delete().eq("endpoint",ep),async()=>{});
+};
+$("pushTest").onclick=async()=>{
+  if(!pushSub)return;
+  try{
+    const r=await fetch(SUPABASE_URL+"/functions/v1/erinnerung",{method:"POST",headers:{"Content-Type":"application/json",apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+SUPABASE_ANON_KEY},body:JSON.stringify({mode:"test",endpoint:pushSub.endpoint})});
+    const j=await r.json().catch(()=>({}));
+    flash(r.ok&&j.ok?"Test gesendet. Die Mitteilung kommt gleich.":"Test fehlgeschlagen ("+(j.error||r.status)+"). Ist die Edge Function eingerichtet?",!(r.ok&&j.ok),5000);
+  }catch(e){flash("Test fehlgeschlagen: Edge Function nicht erreichbar.",true,5000)}
+};
+
+/* ---------- Backup als Excel ---------- */
+function backupDue(){
+  if(S.noPay||!S.user)return"";
+  const n=Object.values(S.months).reduce((s,a)=>s+a.length,0)+S.abos.length;
+  if(n<5)return"";
+  const lb=S.settings&&S.settings.lastBackup;
+  if(!lb)return"Sichere deine Daten einmal als Excel-Datei.";
+  const days=Math.round((new Date(todayIso())-new Date(lb))/864e5);
+  return days>=31?`Letztes Backup vor ${days} Tagen. Tippen zum Sichern.`:"";
+}
+async function fetchAll(table,order){
+  const out=[];for(let off=0;;off+=1000){const {data,error}=await sb.from(table).select("*").order(order).range(off,off+999);if(error)throw error;out.push(...data);if(data.length<1000)return out}
+}
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=()=>rej(new Error("Bibliothek konnte nicht geladen werden"));document.head.appendChild(s)})}
+async function doBackup(){
+  try{
+    flash("Backup wird erstellt…",false,8000);
+    if(!window.XLSX)await loadScript("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js");
+    const [bu,ab,ge,bg,wu,sc]=await Promise.all([fetchAll("buchungen","datum"),fetchAll("abos","created_at"),S.needsUpdate?[]:fetchAll("gehalt","gueltig_ab"),fetchAll("budgets","schluessel"),S.needsUpdate?[]:fetchAll("wuensche","created_at"),S.noU4?[]:fetchAll("schulden","datum")]);
+    const N=v=>v==null?"":Number(v);
+    const sheets={
+      Buchungen:bu.map(r=>({Datum:r.datum,Art:r.typ==="einnahme"?"Einnahme":"Ausgabe",Kategorie:r.kategorie,Notiz:r.notiz,Betrag:r.typ==="einnahme"?N(r.betrag):-N(r.betrag),Zahlart:r.zahlart==="karte"?"Kreditkarte":"Konto"})),
+      Fixkosten:ab.map(r=>({Name:r.name,Art:REC[recKind(r.kategorie)].n,Kategorie:r.kategorie,Betrag:N(r.betrag),Intervall:IV[r.intervall].l,"Erste Abbuchung":r.erste_abbuchung,Aktiv:r.aktiv?"ja":"nein","Laufzeit bis":r.laufzeit_ende||"","Kündigungsfrist":r.frist_wert!=null?r.frist_wert+" "+(r.frist_einheit||""):"","Verlängerung (Monate)":r.verlaengerung_monate||""})),
+      Gehalt:ge.map(r=>({"Gilt ab":String(r.gueltig_ab).slice(0,7),Netto:N(r.betrag),Zahltag:r.zahltag>=31?"Monatsende":r.zahltag})),
+      Budgets:bg.map(r=>({Kategorie:budgetName(r.schluessel),"Budget pro Monat":N(r.betrag)})),
+      Wünsche:wu.map(r=>({Was:r.name,Preis:N(r.preis),Notiz:r.notiz})),
+      Ausgelegt:sc.map(r=>({Datum:r.datum,Person:r.person,Richtung:r.richtung==="bekomme"?"bekomme ich":"schulde ich",Betrag:N(r.betrag),Wofür:r.notiz,"Erledigt am":r.erledigt_am||""}))
+    };
+    const wb=XLSX.utils.book_new();
+    Object.entries(sheets).forEach(([n,rows])=>{const ws=XLSX.utils.json_to_sheet(rows.length?rows:[{Hinweis:"Keine Einträge"}]);ws["!cols"]=Object.keys(rows[0]||{Hinweis:1}).map(k=>({wch:Math.max(10,k.length+2)}));XLSX.utils.book_append_sheet(wb,ws,n)});
+    const buf=XLSX.write(wb,{type:"array",bookType:"xlsx"});
+    const name=`Haushaltsbuch-Backup-${todayIso()}.xlsx`;
+    const file=new File([buf],name,{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+    let shared=false;
+    if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:name});shared=true}catch(e){if(e.name==="AbortError"){flash("Backup abgebrochen.");return}}}
+    if(!shared){const url=URL.createObjectURL(file);const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000)}
+    S.settings={...S.settings,lastBackup:todayIso()};render();
+    if(!S.noPay)await sb.from("einstellungen").upsert({user_id:S.user.id,daten:S.settings,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+    flash(`Backup gesichert: ${bu.length} Buchungen`,false,4000);
+  }catch(e){flash("Backup fehlgeschlagen: "+(e.message||e),true,6000)}
+}
+$("backupBtn").onclick=doBackup;
+
 /* ---------- Navigation ---------- */
-function shift(d){let m=view.m+d,y=view.y;if(m<0){m=11;y--}if(m>11){m=0;y++}view={y,m};if(!tx.editing)$("txDate").value=defaultDate();render();loadMonth(mk())}
+function shift(d){let m=view.m+d,y=view.y;if(m<0){m=11;y--}if(m>11){m=0;y++}view={y,m};if(F.scope==="y"||(tab==="cats"&&ov==="y"))ensureYear(y);if(!tx.editing)$("txDate").value=defaultDate();render();loadMonth(mk())}
 $("prev").onclick=()=>shift(-1);$("next").onclick=()=>shift(1);
-["list","cats","abos","wish"].forEach(t=>$("tab-"+t).onclick=()=>{const ch=tab!==t;tab=t;render();if(ch)window.scrollTo({top:0})});
+["list","cats","abos","wish","debt"].forEach(t=>$("tab-"+t).onclick=()=>{const ch=tab!==t;tab=t;render();if(ch)window.scrollTo({top:0})});
 
 /* ---------- Export ---------- */
 $("exportBtn").onclick=()=>{
@@ -1117,10 +1526,10 @@ function showView(user){
   $("bootMsg").hidden=true;
   $("loginView").hidden=!!user;$("appView").hidden=!user;
   if(user&&(!S.user||S.user.id!==user.id)){
-    S.user=user;S.months={};S.abos=[];S.budgets={};S.gehalt=[];S.wishes=[];S.openCat=null;S.settings={};
+    S.user=user;S.months={};S.abos=[];S.budgets={};S.gehalt=[];S.wishes=[];S.openCat=null;S.settings={};S.debts=[];S.years={};
     $("storeInfo").textContent="Angemeldet als "+user.email;
-    $("txDate").value=defaultDate();$("aboStart").value=todayIso();$("salFrom").value=mk();
-    render();loadStatic();loadMonth(mk());handlePrefill();
+    $("txDate").value=defaultDate();$("aboStart").value=todayIso();$("salFrom").value=mk();$("debtDate").value=todayIso();
+    render();loadStatic();loadMonth(mk());handlePrefill();refreshPush();
   }
   if(!user)S.user=null;
 }
