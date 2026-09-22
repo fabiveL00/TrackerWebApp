@@ -337,6 +337,13 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
   button.item:hover,.catbtn:hover{background:var(--fill2)}
   .chip:hover{filter:brightness(.97)}
 }
+.projbanner{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:18px;margin-bottom:12px;font-size:15px}
+.projbanner .pdot{width:10px;height:10px;border-radius:99px;background:var(--blue);flex:none}
+.projbanner .ptxt{flex:1;min-width:0;display:flex;flex-direction:column}
+.projbanner .ptxt span{font-size:13px;color:var(--label2)}
+.tag.proj{background:color-mix(in srgb,var(--blue) 14%,transparent);color:var(--blue)}
+.newproj{display:flex;gap:8px;align-items:center;padding:10px}
+.newproj input{flex:1}
 </style>
 
 </head>
@@ -385,6 +392,7 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
   </section>
   <div class="alerts" id="alerts" aria-live="polite"></div>
 
+  <div class="projbanner glass" id="projBanner" hidden></div>
   <form class="card" id="txForm" autocomplete="off">
     <div class="seg" role="group" aria-label="Art">
       <button type="button" id="typeOut" aria-pressed="true">Ausgabe</button>
@@ -398,6 +406,12 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
       <div class="seg" role="group" aria-label="Bezahlt mit"><button type="button" id="payKonto" aria-pressed="true">Konto / Bar</button><button type="button" id="payKarte" aria-pressed="false">Kreditkarte</button></div></div></div>
     <div class="row" id="taxRow"><div class="field" style="flex:1 1 100%"><label>Steuer</label>
       <div class="taxline"><button type="button" class="chip" id="taxToggle" aria-pressed="false">Steuerlich absetzbar</button><select id="txTax" class="chipsel" hidden aria-label="Art der Steuerausgabe"></select></div></div></div>
+    <div class="row" id="fuelRow" hidden>
+      <div class="field" style="flex:1 1 90px"><label for="txLiter">Liter</label><input id="txLiter" class="num" inputmode="decimal" placeholder="z. B. 42,5"></div>
+      <div class="field" style="flex:1 1 120px"><label for="txKm">Kilometerstand</label><input id="txKm" class="num" inputmode="numeric" placeholder="z. B. 84210"></div>
+      <div class="field" style="flex:1 1 110px"><label for="txCar">Fahrzeug</label><input id="txCar" list="carList" placeholder="optional"><datalist id="carList"></datalist></div>
+    </div>
+    <div class="row" id="projRow"><div class="field" style="flex:1 1 100%"><label for="txProj">Projekt / Reise (optional)</label><input id="txProj" list="projList" placeholder="z. B. Mallorca 2026"><datalist id="projList"></datalist></div></div>
     <div class="row"><div class="field" style="flex:2 1 150px"><label for="txNote">Notiz</label><input id="txNote" placeholder="z. B. Edeka, Mensa"></div><div class="field" style="flex:1 1 140px"><label for="txDate">Datum</label><input id="txDate" type="date"></div></div>
     <div class="actions">
       <button class="btn" type="submit" id="txSave">Speichern</button>
@@ -433,6 +447,8 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
     <div id="monthView">
     <div class="flow" id="flow"></div>
     <div id="kkBox"></div>
+    <div id="projBox"></div>
+    <div id="fuelBox"></div>
     <h2 class="sec">Analyse</h2>
     <div id="analysis"></div>
     <h2 class="sec">Ausgaben nach Kategorie</h2>
@@ -673,8 +689,8 @@ const mk=()=>view.y+"-"+pad(view.m+1);
 const configured=!SUPABASE_URL.includes("DEIN-PROJEKT")&&!SUPABASE_ANON_KEY.includes("DEIN-");
 const sb=configured&&window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true}}):null;
 
-const fromTx=r=>({id:r.id,type:r.typ==="einnahme"?"in":"out",amount:Number(r.betrag),cat:r.kategorie,note:r.notiz||"",date:r.datum,pay:r.zahlart==="karte"?"karte":"konto",tax:r.steuer||""});
-const toTx=e=>{const o={id:e.id,user_id:S.user.id,typ:e.type==="in"?"einnahme":"ausgabe",betrag:e.amount,kategorie:e.cat,notiz:e.note,datum:e.date};if(!S.noPay)o.zahlart=e.type==="out"&&e.pay==="karte"?"karte":"konto";if(!S.noU5)o.steuer=e.type==="out"&&e.tax?e.tax:null;return o};
+const fromTx=r=>({id:r.id,type:r.typ==="einnahme"?"in":"out",amount:Number(r.betrag),cat:r.kategorie,note:r.notiz||"",date:r.datum,pay:r.zahlart==="karte"?"karte":"konto",tax:r.steuer||"",proj:r.projekt||"",liter:r.liter!=null?Number(r.liter):null,km:r.km??null,car:r.fahrzeug||""});
+const toTx=e=>{const o={id:e.id,user_id:S.user.id,typ:e.type==="in"?"einnahme":"ausgabe",betrag:e.amount,kategorie:e.cat,notiz:e.note,datum:e.date};if(!S.noPay)o.zahlart=e.type==="out"&&e.pay==="karte"?"karte":"konto";if(!S.noU5)o.steuer=e.type==="out"&&e.tax?e.tax:null;if(!S.noU6){o.projekt=e.proj||null;const f=e.type==="out"&&e.cat==="Tanken & Auto";o.liter=f&&e.liter?e.liter:null;o.km=f&&e.km!=null?e.km:null;o.fahrzeug=f&&e.car?e.car:null}return o};
 const fromAbo=r=>({id:r.id,name:r.name,amount:Number(r.betrag),interval:r.intervall,start:r.erste_abbuchung,cat:r.kategorie,active:r.aktiv,pay:r.zahlart==="karte"?"karte":"konto",end:r.laufzeit_ende||"",fristW:r.frist_wert??null,fristU:r.frist_einheit||"monate",renew:r.verlaengerung_monate||0});
 const fromDebt=r=>({id:r.id,person:r.person,amount:Number(r.betrag),dir:r.richtung,note:r.notiz||"",date:r.datum,done:r.erledigt_am||null});
 const fromSal=r=>({id:r.id,amount:Number(r.betrag),day:r.zahltag,from:String(r.gueltig_ab).slice(0,7)});
@@ -691,15 +707,16 @@ async function loadMonth(k,force){
   S.months[k]=data.map(fromTx);render();
 }
 async function loadStatic(){
-  const [a,b,g,w,st,dt,u5]=await Promise.all([sb.from("abos").select("*").order("created_at"),sb.from("budgets").select("*"),sb.from("gehalt").select("*").order("gueltig_ab"),sb.from("wuensche").select("*").order("created_at"),sb.from("einstellungen").select("*").maybeSingle(),sb.from("schulden").select("*").order("datum",{ascending:false}),sb.from("buchungen").select("steuer").limit(1)]);
+  const [a,b,g,w,st,dt,u5,u6]=await Promise.all([sb.from("abos").select("*").order("created_at"),sb.from("budgets").select("*"),sb.from("gehalt").select("*").order("gueltig_ab"),sb.from("wuensche").select("*").order("created_at"),sb.from("einstellungen").select("*").maybeSingle(),sb.from("schulden").select("*").order("datum",{ascending:false}),sb.from("buchungen").select("steuer").limit(1),sb.from("buchungen").select("projekt,liter,km,fahrzeug").limit(1)]);
   if(a.error||b.error){flash("Laden fehlgeschlagen: "+(a.error||b.error).message,true,6000);return}
   S.abos=a.data.map(fromAbo);
   S.budgets=Object.fromEntries(b.data.map(r=>[r.schluessel,Number(r.betrag)]));
   S.needsUpdate=!!(g.error||w.error);
   S.gehalt=g.error?[]:g.data.map(fromSal);
   S.wishes=w.error?[]:w.data.map(fromWish);
-  S.noU5=!!u5.error;S.noU4=!!dt.error;S.debts=dt.error?[]:dt.data.map(fromDebt);
+  S.noU5=!!u5.error;S.noU6=!!u6.error;S.noU4=!!dt.error;S.debts=dt.error?[]:dt.data.map(fromDebt);
   S.noPay=!!st.error;S.settings=(st.data&&st.data.daten)||{};
+  if(!tx.editing&&!$("txProj").value)$("txProj").value=activeProj();
   render();
 }
 async function write(promise,reload){
@@ -808,7 +825,7 @@ function render(){
   renderSalary();
   renderWishes(bal);
   renderFlow(rows);
-  if(tab==="cats"){ensureCardMonths();renderCard();renderAnalysis(rows)}
+  if(tab==="cats"){ensureCardMonths();renderCard();renderProjects();renderFuel();renderAnalysis(rows)}
   $("homeTop").hidden=tab!=="list";
   renderDebts();renderSettings();renderDeadlines();
   if(tab==="cats")renderOverviewMode();
@@ -843,6 +860,9 @@ function renderForm(){
   const sc=$("txCats"),on=sc.querySelector('[aria-pressed="true"]');if(on){const x=on.getBoundingClientRect().left-sc.getBoundingClientRect().left+sc.scrollLeft,l=x-16,r=x+on.offsetWidth+16-sc.clientWidth;if(sc.scrollLeft>l)sc.scrollLeft=l;else if(sc.scrollLeft<r)sc.scrollLeft=r}
   $("payRow").hidden=tx.type!=="out"||S.noPay;
   $("taxRow").hidden=tx.type!=="out"||S.noU5;
+  $("fuelRow").hidden=tx.type!=="out"||tx.cat!=="Tanken & Auto"||S.noU6;
+  $("projRow").hidden=!!S.noU6;
+  renderProjBanner();
   const ts=$("txTax");if(!ts.options.length)ts.innerHTML=TAX_ARTS.map(a=>`<option>${esc(a)}</option>`).join("");
   $("taxToggle").setAttribute("aria-pressed",!!tx.tax);ts.hidden=!tx.tax;if(tx.tax)ts.value=tx.tax;
   $("payKonto").setAttribute("aria-pressed",tx.pay!=="karte");$("payKarte").setAttribute("aria-pressed",tx.pay==="karte");
@@ -852,7 +872,7 @@ function renderForm(){
 
 function itemRow(r){
   const kind=r.src==="abo"?REC[recKind(r.cat)].n:"";
-  const inner=`<span class="t">${esc(r.note||r.cat)}${r.src==="abo"?`<span class="tag">${kind}</span>`:r.src==="sal"?'<span class="tag">Auto</span>':""}${r.pay==="karte"?'<span class="tag">Karte</span>':""}${r.tax?'<span class="tag">Steuer</span>':""}</span><span class="m">${esc(r.cat)}${r.tax?" · "+esc(r.tax):""}</span><span class="a num ${r.type==="in"?"pos":""}">${r.type==="in"?"+":"−"}${eur.format(r.amount)}</span>`;
+  const inner=`<span class="t">${esc(r.note||r.cat)}${r.src==="abo"?`<span class="tag">${kind}</span>`:r.src==="sal"?'<span class="tag">Auto</span>':""}${r.pay==="karte"?'<span class="tag">Karte</span>':""}${r.tax?'<span class="tag">Steuer</span>':""}${r.proj?`<span class="tag proj">${esc(r.proj)}</span>`:""}</span><span class="m">${esc(r.cat)}${r.tax?" · "+esc(r.tax):""}${r.liter?` · ${fmtIn(r.liter)} l`+(r.km!=null?` · ${r.km.toLocaleString("de-DE")} km`:""):""}</span><span class="a num ${r.type==="in"?"pos":""}">${r.type==="in"?"+":"−"}${eur.format(r.amount)}</span>`;
   if(r.src==="sal")return `<button type="button" class="item" data-sal="1" title="Gehalt bearbeiten">${inner}</button>`;
   return r.src==="abo"?`<button type="button" class="item" data-abo="${r.aboId}" title="Bearbeiten">${inner}</button>`:`<button type="button" class="item" data-tx="${r.id}" data-date="${r.date}" title="Bearbeiten">${inner}</button>`;
 }
@@ -876,7 +896,7 @@ function searchRows(){
     if(F.kind==="karte"&&r.pay!=="karte")return false;
     if(F.kind==="steuer"&&!r.tax)return false;
     if(F.cat&&r.cat!==F.cat&&catKey(r)!==F.cat)return false;
-    if(q){const hay=[r.note,r.cat,catKey(r),fmtIn(r.amount),String(r.amount)].join(" ").toLowerCase();if(!q.split(/\s+/).every(w=>hay.includes(w)))return false}
+    if(q){const hay=[r.note,r.cat,catKey(r),fmtIn(r.amount),String(r.amount),r.proj||"",r.car||""].join(" ").toLowerCase();if(!q.split(/\s+/).every(w=>hay.includes(w)))return false}
     return true;
   });
 }
@@ -1105,7 +1125,7 @@ $("kindSeg").onclick=e=>{const b=e.target.closest("[data-kind]");if(!b)return;ab
 
 /* ---------- Buchungen ---------- */
 function defaultDate(){const t=todayIso();return t.slice(0,7)===mk()?t:mk()+"-01"}
-function resetTx(){tx.editing=null;tx.editDate=null;tx.tax="";if(!tx.pay)tx.pay=lastPay();$("txAmount").value="";$("txNote").value="";$("txDate").value=defaultDate();$("txErr").textContent="";renderForm()}
+function resetTx(){tx.editing=null;tx.editDate=null;tx.tax="";$("txLiter").value="";$("txKm").value="";$("txProj").value=activeProj();if(!tx.pay)tx.pay=lastPay();$("txAmount").value="";$("txNote").value="";$("txDate").value=defaultDate();$("txErr").textContent="";renderForm()}
 $("typeOut").onclick=()=>{tx.type="out";renderForm()};
 $("typeIn").onclick=()=>{tx.type="in";renderForm()};
 function setPay(p){tx.pay=p;try{localStorage.setItem("hb-pay",p)}catch(e){}renderForm()}
@@ -1119,7 +1139,10 @@ $("txForm").onsubmit=async e=>{
   if(isNaN(amount)){$("txErr").textContent="Bitte einen Betrag über 0 eingeben, z. B. 12,50.";$("txAmount").focus();return}
   if(!date){$("txErr").textContent="Bitte ein Datum wählen.";return}
   const k=date.slice(0,7);
-  const entry={id:tx.editing||newId(),type:tx.type,amount,cat:tx.cat,note:$("txNote").value.trim(),date,pay:tx.type==="out"?tx.pay:"konto",tax:tx.type==="out"?(tx.tax||""):""};
+  const lit=$("txLiter").value.trim()?parseAmt($("txLiter").value):null,kmv=$("txKm").value.trim()?parseInt($("txKm").value.replace(/\D/g,""),10):null;
+  if(lit!==null&&isNaN(lit)){$("txErr").textContent="Bitte gültige Liter eingeben, z. B. 42,5.";return}
+  const entry={id:tx.editing||newId(),type:tx.type,amount,cat:tx.cat,note:$("txNote").value.trim(),date,pay:tx.type==="out"?tx.pay:"konto",tax:tx.type==="out"?(tx.tax||""):"",proj:$("txProj").value.trim(),liter:lit,km:isNaN(kmv)?null:kmv,car:$("txCar").value.trim()};
+  S.projLoaded=false;S.fuelLoaded=false;
   const wasEditing=tx.editing,oldK=tx.editDate&&tx.editDate.slice(0,7);
   if(wasEditing&&S.months[oldK])S.months[oldK]=S.months[oldK].filter(x=>x.id!==wasEditing);
   if(S.months[k])S.months[k]=[...S.months[k],entry];
@@ -1133,7 +1156,7 @@ $("txForm").onsubmit=async e=>{
   }
 };
 $("txCancel").onclick=()=>{resetTx()};
-$("txDelete").onclick=async()=>{
+$("txDelete").onclick=async()=>{S.projLoaded=false;S.fuelLoaded=false;
   const id=tx.editing,k=tx.editDate.slice(0,7);
   if(S.months[k])S.months[k]=S.months[k].filter(x=>x.id!==id);
   resetTx();render();
@@ -1144,7 +1167,7 @@ $("pane-list").onclick=e=>{
   if(b.dataset.abo){openAbo(b.dataset.abo);return}
   if(b.dataset.sal){openSalary();return}
   const k=b.dataset.date.slice(0,7),x=(S.months[k]||[]).find(i=>i.id===b.dataset.tx);if(!x)return;
-  tx={type:x.type,cat:x.cat,editing:x.id,editDate:x.date,pay:x.pay||"konto",tax:x.tax||""};
+  tx={type:x.type,cat:x.cat,editing:x.id,editDate:x.date,pay:x.pay||"konto",tax:x.tax||""};$("txProj").value=x.proj||"";$("txLiter").value=x.liter?fmtIn(x.liter):"";$("txKm").value=x.km??"";$("txCar").value=x.car||"";
   $("txAmount").value=fmtIn(x.amount);$("txNote").value=x.note||"";$("txDate").value=x.date;$("txErr").textContent="";
   renderForm();$("txForm").scrollIntoView({behavior:"smooth",block:"start"});
 };
@@ -1153,7 +1176,7 @@ $("catsList").onclick=e=>{
   const it=e.target.closest("button.item");
   if(it){if(it.dataset.abo){openAbo(it.dataset.abo);return}
     const k=it.dataset.date.slice(0,7),x=(S.months[k]||[]).find(i=>i.id===it.dataset.tx);if(!x)return;
-    tx={type:x.type,cat:x.cat,editing:x.id,editDate:x.date,pay:x.pay||"konto",tax:x.tax||""};tab="list";
+    tx={type:x.type,cat:x.cat,editing:x.id,editDate:x.date,pay:x.pay||"konto",tax:x.tax||""};$("txProj").value=x.proj||"";$("txLiter").value=x.liter?fmtIn(x.liter):"";$("txKm").value=x.km??"";$("txCar").value=x.car||"";tab="list";
     $("txAmount").value=fmtIn(x.amount);$("txNote").value=x.note||"";$("txDate").value=x.date;$("txErr").textContent="";
     render();$("txForm").scrollIntoView({behavior:"smooth",block:"start"});return}
   const b=e.target.closest("button.catbtn");if(!b)return;
@@ -1365,7 +1388,10 @@ function guessCat(note){
   const hit=MERCHANTS.find(([re])=>re.test(note));return hit?hit[1]:null;
 }
 function handlePrefill(){
-  const q=new URLSearchParams(location.search);if(!q.has("betrag"))return;
+  const q=new URLSearchParams(location.search);
+  const rb=q.get("rueckblick");
+  if(rb&&/^\d{4}-\d{2}$/.test(rb)){const [y,m]=rb.split("-").map(Number);view={y,m:m-1};tab="cats";ov="m";try{history.replaceState(null,"",location.pathname)}catch(e){}render();loadMonth(mk());return}
+  if(!q.has("betrag"))return;
   const amt=parseAmt(q.get("betrag")||""),note=(q.get("notiz")||q.get("haendler")||"").trim(),pay=q.get("zahlart")==="konto"?"konto":"karte";
   const kat=q.get("kat");
   view={y:now.getFullYear(),m:now.getMonth()};tab="list";
@@ -1516,6 +1542,96 @@ async function exportTax(y){
     const url=URL.createObjectURL(file),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
   }catch(e){flash("Export fehlgeschlagen: "+(e.message||e),true,5000)}
 }
+
+/* ---------- Projekte & Reisen ---------- */
+const activeProj=()=>(S.settings&&S.settings.activeProject)||"";
+async function saveSettings(){if(!S.noPay)await write(sb.from("einstellungen").upsert({user_id:S.user.id,daten:S.settings,updated_at:new Date().toISOString()},{onConflict:"user_id"}),loadStatic)}
+async function setActiveProj(name){S.settings={...S.settings,activeProject:name||""};if(!tx.editing)$("txProj").value=name||"";render();await saveSettings()}
+function renderProjBanner(){
+  const a=activeProj(),b=$("projBanner");
+  if(!a||S.noU6){b.hidden=true;return}
+  b.hidden=false;b.innerHTML=`<span class="pdot"></span><span class="ptxt"><b>${esc(a)}</b><span>Neue Einträge werden dieser Reise zugeordnet.</span></span><button type="button" class="linkbtn" id="projEnd">Beenden</button>`;
+}
+$("projBanner").onclick=e=>{if(e.target.id==="projEnd")setActiveProj("")};
+async function fetchWhere(col){
+  const out=[];for(let off=0;;off+=1000){const {data,error}=await sb.from("buchungen").select("*").not(col,"is",null).order("datum").range(off,off+999);if(error)throw error;out.push(...data);if(data.length<1000)return out}
+}
+async function loadProjects(){if(S.projLoaded||S.projLoading||S.noU6)return;S.projLoading=true;try{S.projRows=(await fetchWhere("projekt")).map(fromTx);S.projLoaded=true}catch(e){flash("Projekte laden fehlgeschlagen: "+e.message,true)}S.projLoading=false;render()}
+let openProj=null;
+function renderProjects(){
+  const el=$("projBox");
+  if(S.noU6){el.innerHTML=`<h2 class="sec">Projekte &amp; Reisen</h2><p class="hint err" style="margin:0 16px">Bitte supabase-update-6.sql ausführen.</p>`;return}
+  if(!S.projLoaded){loadProjects();el.innerHTML=`<h2 class="sec">Projekte &amp; Reisen</h2><p class="empty">Lade…</p>`;return}
+  const rows=S.projRows||[],by={};rows.forEach(r=>(by[r.proj]=by[r.proj]||[]).push(r));
+  const names=Object.keys(by).sort((a,b)=>by[b][by[b].length-1].date.localeCompare(by[a][by[a].length-1].date));
+  const a=activeProj();if(a&&!by[a])names.unshift(a);
+  $("projList").innerHTML=names.map(n=>`<option value="${esc(n)}">`).join("");
+  let html=`<h2 class="sec">Projekte &amp; Reisen</h2>`;
+  html+=`<form class="card newproj" id="projForm" autocomplete="off"><input id="projNew" placeholder="Neue Reise oder Projekt, z. B. Mallorca 2026"><button class="btn small" type="submit">Starten</button></form>`;
+  if(!names.length){el.innerHTML=html+`<p class="hint">Starte eine Reise, dann werden alle neuen Einträge ihr zugeordnet, bis du sie beendest. Du kannst Buchungen auch einzeln über das Feld „Projekt / Reise“ zuordnen.</p>`;return}
+  html+=`<div class="group" style="margin-top:12px">`+names.map(n=>{
+    const l=by[n]||[],out=l.filter(r=>r.type==="out").reduce((s,r)=>s+r.amount,0),inc=l.filter(r=>r.type==="in").reduce((s,r)=>s+r.amount,0);
+    const from=l.length?l[0].date:"",to=l.length?l[l.length-1].date:"",open=openProj===n;
+    const days=from?Math.round((new Date(to)-new Date(from))/864e5)+1:0;
+    let det="";
+    if(open){const cats={};l.filter(r=>r.type==="out").forEach(r=>{cats[r.cat]=(cats[r.cat]||0)+r.amount});
+      det=`<div class="catitems"><div class="taxlist" style="padding:0 16px 8px 28px">${Object.entries(cats).sort((x,y)=>y[1]-x[1]).map(([k,v])=>`<div><span>${esc(k)}</span><span class="num">${eur.format(v)}</span></div>`).join("")}</div>${l.slice().reverse().map(itemRow).join("")}
+        <div class="actions" style="padding:0 16px 14px 28px">${a===n?`<button type="button" class="btn small ghost" data-pend="1">Reise beenden</button>`:`<button type="button" class="btn small ghost" data-pact="${esc(n)}">Als aktiv setzen</button>`}</div></div>`}
+    return `<div class="catwrap${open?" open":""}"><button type="button" class="item" data-proj="${esc(n)}"><span class="t">${esc(n)}${a===n?'<span class="tag proj">aktiv</span>':""}</span><span class="m">${from?`${fmtShort(from)} – ${fmtShort(to)} · ${days} ${days===1?"Tag":"Tage"} · ${l.length} Buchungen`:"noch keine Buchungen"}${days>1?` · Ø ${eur.format(out/days)}/Tag`:""}</span><span class="a num">${eur.format(out-inc)}</span></button>${det}</div>`}).join("")+`</div>`;
+  el.innerHTML=html;
+}
+$("projBox").addEventListener("submit",e=>{if(e.target.id!=="projForm")return;e.preventDefault();const n=$("projNew").value.trim();if(n){setActiveProj(n);flash(`„${n}“ gestartet. Neue Einträge werden zugeordnet.`,false,4000)}});
+$("projBox").addEventListener("click",e=>{
+  const act=e.target.closest("[data-pact]");if(act){setActiveProj(act.dataset.pact);return}
+  if(e.target.closest("[data-pend]")){setActiveProj("");return}
+  const it=e.target.closest("button.item[data-tx],button.item[data-abo]");
+  if(it){if(it.dataset.abo){openAbo(it.dataset.abo);return}
+    const x=(S.projRows||[]).find(r=>r.id===it.dataset.tx);if(!x)return;
+    const k=x.date.slice(0,7);const [yy,mm]=k.split("-").map(Number);view={y:yy,m:mm-1};loadMonth(k);
+    tx={type:x.type,cat:x.cat,editing:x.id,editDate:x.date,pay:x.pay||"konto",tax:x.tax||""};$("txProj").value=x.proj||"";$("txLiter").value=x.liter?fmtIn(x.liter):"";$("txKm").value=x.km??"";$("txCar").value=x.car||"";
+    $("txAmount").value=fmtIn(x.amount);$("txNote").value=x.note||"";$("txDate").value=x.date;tab="list";render();$("txForm").scrollIntoView({behavior:"smooth",block:"start"});return}
+  const p=e.target.closest("[data-proj]");if(p){openProj=openProj===p.dataset.proj?null:p.dataset.proj;renderProjects()}
+});
+
+/* ---------- Tankbuch ---------- */
+async function loadFuel(){if(S.fuelLoaded||S.fuelLoading||S.noU6)return;S.fuelLoading=true;try{S.fuelRows=(await fetchWhere("liter")).map(fromTx);S.fuelLoaded=true}catch(e){flash("Tankbuch laden fehlgeschlagen: "+e.message,true)}S.fuelLoading=false;render()}
+function fuelStats(list){
+  const l=list.slice().sort((a,b)=>a.date.localeCompare(b.date)||(a.km||0)-(b.km||0));
+  const out=[];let prev=null;
+  l.forEach(r=>{const d=prev&&r.km!=null&&prev.km!=null&&r.km>prev.km?r.km-prev.km:null;
+    out.push({...r,dist:d,cons:d?r.liter/d*100:null,perKm:d?r.amount/d:null,ppl:r.amount/r.liter});if(r.km!=null)prev=r});
+  const v=out.filter(x=>x.dist);const km=v.reduce((s,x)=>s+x.dist,0),lit=v.reduce((s,x)=>s+x.liter,0),cost=v.reduce((s,x)=>s+x.amount,0);
+  const yearAgo=iso(new Date(now.getFullYear()-1,now.getMonth(),now.getDate()));
+  const last12=out.filter(x=>x.date>=yearAgo);
+  return {rows:out,avgCons:km?lit/km*100:null,perKm:km?cost/km:null,km,ppl:last12.length?last12.reduce((s,x)=>s+x.amount,0)/last12.reduce((s,x)=>s+x.liter,0):null,cost12:last12.reduce((s,x)=>s+x.amount,0)};
+}
+function renderFuel(){
+  const el=$("fuelBox");
+  if(S.noU6){el.innerHTML="";return}
+  if(!S.fuelLoaded){loadFuel();el.innerHTML="";return}
+  const rows=S.fuelRows||[];
+  const cars=[...new Set(rows.map(r=>r.car||""))];
+  $("carList").innerHTML=cars.filter(Boolean).map(c=>`<option value="${esc(c)}">`).join("");
+  let html=`<h2 class="sec">Tankbuch</h2>`;
+  if(!rows.length){el.innerHTML=html+`<p class="hint">Wähl beim Eintragen die Kategorie „Tanken &amp; Auto“ und gib Liter und Kilometerstand an. Tank am besten immer voll, dann stimmt der Verbrauch.</p>`;return}
+  cars.forEach(c=>{
+    const st=fuelStats(rows.filter(r=>(r.car||"")===c));
+    html+=`${cars.length>1?`<div class="label" style="margin:14px 16px 6px">${esc(c||"Ohne Fahrzeug")}</div>`:""}
+      <div class="abohead" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+        <div class="glass"><div class="label">Ø Verbrauch</div><div class="val num">${st.avgCons?st.avgCons.toFixed(1).replace(".",",")+" l":"–"}</div><div class="sub" style="font-size:11px;color:var(--label2)">pro 100 km</div></div>
+        <div class="glass"><div class="label">Kosten/km</div><div class="val num">${st.perKm?eur.format(st.perKm):"–"}</div><div class="sub" style="font-size:11px;color:var(--label2)">${st.km?st.km.toLocaleString("de-DE")+" km erfasst":"noch zu wenig Daten"}</div></div>
+        <div class="glass"><div class="label">Ø Preis/Liter</div><div class="val num">${st.ppl?st.ppl.toFixed(3).replace(".",",")+" €":"–"}</div><div class="sub" style="font-size:11px;color:var(--label2)">12 Mon.: ${eur.format(st.cost12)}</div></div>
+      </div>
+      <div class="group">${st.rows.slice(-8).reverse().map(r=>`<button type="button" class="item" data-fuel="${r.id}"><span class="t">${fmtShort(r.date)}${r.note&&r.note!=="Tanken"?` · ${esc(r.note)}`:""}</span><span class="m">${fmtIn(r.liter)} l · ${r.ppl.toFixed(3).replace(".",",")} €/l${r.km!=null?` · ${r.km.toLocaleString("de-DE")} km`:""}${r.dist?` · ${r.dist.toLocaleString("de-DE")} km gefahren`:""}</span><span class="a num">${r.cons?r.cons.toFixed(1).replace(".",",")+" l/100":eur.format(r.amount)}</span></button>`).join("")}</div>`;
+  });
+  el.innerHTML=html+`<p class="hint">Der Verbrauch wird von Tankfüllung zu Tankfüllung berechnet. Das stimmt nur, wenn du jedes Mal volltankst.</p>`;
+}
+$("fuelBox").addEventListener("click",e=>{
+  const b=e.target.closest("[data-fuel]");if(!b)return;const x=(S.fuelRows||[]).find(r=>r.id===b.dataset.fuel);if(!x)return;
+  const k=x.date.slice(0,7);const [yy,mm]=k.split("-").map(Number);view={y:yy,m:mm-1};loadMonth(k);
+  tx={type:x.type,cat:x.cat,editing:x.id,editDate:x.date,pay:x.pay||"konto",tax:x.tax||""};$("txProj").value=x.proj||"";$("txLiter").value=x.liter?fmtIn(x.liter):"";$("txKm").value=x.km??"";$("txCar").value=x.car||"";
+  $("txAmount").value=fmtIn(x.amount);$("txNote").value=x.note||"";$("txDate").value=x.date;tab="list";render();$("txForm").scrollIntoView({behavior:"smooth",block:"start"});
+});
 
 /* ---------- Ausgelegtes Geld ---------- */
 function renderDebts(){
@@ -1732,7 +1848,7 @@ function showView(user){
   $("bootMsg").hidden=true;
   $("loginView").hidden=!!user;$("appView").hidden=!user;
   if(user&&(!S.user||S.user.id!==user.id)){
-    S.user=user;S.months={};S.abos=[];S.budgets={};S.gehalt=[];S.wishes=[];S.openCat=null;S.settings={};S.debts=[];S.years={};
+    S.user=user;S.months={};S.abos=[];S.budgets={};S.gehalt=[];S.wishes=[];S.openCat=null;S.settings={};S.debts=[];S.years={};S.projLoaded=false;S.fuelLoaded=false;S.projRows=[];S.fuelRows=[];
     $("storeInfo").textContent="Angemeldet als "+user.email;
     $("txDate").value=defaultDate();$("aboStart").value=todayIso();$("salFrom").value=mk();$("debtDate").value=todayIso();
     render();loadStatic();loadMonth(mk());handlePrefill();refreshPush();if(lockCfg()){showLock();unlock()}
