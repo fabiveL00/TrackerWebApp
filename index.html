@@ -352,6 +352,11 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
 .leaflet-popup-content{font-size:14px;line-height:1.4}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .leaflet-tile{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.95)}}
 :root[data-theme="dark"] .leaflet-tile{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.95)}
+.autobar{position:fixed;z-index:25;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 92px);max-width:520px;margin:0 auto;display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:20px}
+.autobar .atxt{flex:1;min-width:0;display:flex;flex-direction:column}
+.autobar .atxt span{font-size:13px;color:var(--label2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.autobar .btn.small{flex:none!important}
+@media (min-width:900px){.autobar{bottom:28px;left:auto;right:32px;width:420px}}
 </style>
 
 </head>
@@ -609,6 +614,7 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
     <button role="tab" id="tab-debt" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="16.8" cy="9" r="2.6"/><path d="M15.6 14.3c2.6-.3 4.6 1.3 5 4.2"/></svg>Ausgelegt</button>
   </nav>
   <div class="toast glass" id="status" role="status" aria-live="polite"></div>
+  <div class="autobar glass" id="autoBar" hidden role="status"></div>
 
   <div class="sheetbg" id="sheetBg" hidden></div>
   <div class="sheet glass" id="settingsBox" role="dialog" aria-modal="true" aria-labelledby="setTitle" hidden>
@@ -1407,13 +1413,49 @@ function handlePrefill(){
   const amt=parseAmt(q.get("betrag")||""),note=(q.get("notiz")||q.get("haendler")||"").trim(),pay=q.get("zahlart")==="konto"?"konto":"karte";
   const kat=q.get("kat");
   view={y:now.getFullYear(),m:now.getMonth()};tab="list";
+  const auto=q.get("auto")==="1"&&!isNaN(amt);
   tx={type:"out",cat:(kat&&CATS_OUT.includes(kat))?kat:(guessCat(note)||"Sonstiges"),editing:null,editDate:null,pay};
   $("txAmount").value=isNaN(amt)?"":fmtIn(amt);$("txNote").value=note;$("txDate").value=todayIso();
   try{history.replaceState(null,"",location.pathname)}catch(e){}
   render();loadMonth(mk());
-  setTimeout(()=>{const c=guessCat(note);if(c&&!kat&&!tx.editing&&$("txNote").value===note){tx.cat=c;renderForm()}},1200);
-  flash("Von Apple Pay übernommen: Kategorie prüfen, dann speichern.",false,6000);
+  setTimeout(()=>{const c=guessCat(note);if(c&&!kat&&!tx.editing&&$("txNote").value===note){tx.cat=c;renderForm();if(auto)autoBook(amt,note,pay,c)}},auto?900:1200);
+  if(auto)flash("Wird gebucht…",false,2000);
+  else flash("Von Apple Pay übernommen: Kategorie prüfen, dann speichern.",false,6000);
 }
+
+/* ---------- Automatisch buchen (Apple Pay mit &auto=1) ---------- */
+let autoT;
+async function autoBook(amount,note,pay,cat){
+  const date=todayIso(),k=date.slice(0,7);
+  const entry={id:newId(),type:"out",amount,cat:cat||tx.cat||"Sonstiges",note,date,pay,tax:"",proj:activeProj(),liter:null,km:null,car:"",ort:"",lat:null,lon:null};
+  if(S.months[k])S.months[k]=[...S.months[k],entry];
+  resetTx();render();
+  const ok=await write(sb.from("buchungen").insert(toTx(entry)),()=>loadMonth(k,true));
+  if(!ok)return;
+  await loadMonth(k,true);
+  showAutoBar(entry);
+  const hit=budgetStates(monthRows()).filter(x=>(x.k===entry.cat||x.k===TOTAL)&&x.level!=="ok").sort((a,b)=>b.p-a.p)[0];
+  if(hit)flash((hit.level==="over"?"Achtung: Budget „":"Hinweis: Budget „")+budgetName(hit.k)+"“ "+(hit.level==="over"?"überschritten":"zu "+Math.round(hit.p*100)+" % ausgeschöpft"),hit.level==="over",6000);
+}
+function showAutoBar(entry){
+  const b=$("autoBar");b.hidden=false;
+  b.innerHTML=`<span class="atxt"><b>Gebucht: ${eur.format(entry.amount)}</b><span>${esc(entry.note||"ohne Notiz")} · ${esc(entry.cat)}${entry.pay==="karte"?" · Kreditkarte":""}</span></span>
+    <button type="button" class="btn small ghost" data-aedit="${entry.id}" data-adate="${entry.date}">Ändern</button>
+    <button type="button" class="btn small ghost" data-adel="${entry.id}" data-adate="${entry.date}">Löschen</button>`;
+  clearTimeout(autoT);autoT=setTimeout(()=>{b.hidden=true},20000);
+}
+$("autoBar").onclick=async e=>{
+  const ed=e.target.closest("[data-aedit]"),dl=e.target.closest("[data-adel]");
+  if(ed){const k=ed.dataset.adate.slice(0,7),x=(S.months[k]||[]).find(i=>i.id===ed.dataset.aedit);
+    $("autoBar").hidden=true;if(!x)return;
+    tx={type:x.type,cat:x.cat,editing:x.id,editDate:x.date,pay:x.pay||"konto",tax:x.tax||""};
+    $("txAmount").value=fmtIn(x.amount);$("txNote").value=x.note||"";$("txDate").value=x.date;$("txProj").value=x.proj||"";tab="list";render();
+    $("txForm").scrollIntoView({behavior:"smooth",block:"start"});return}
+  if(dl){const id=dl.dataset.adel,k=dl.dataset.adate.slice(0,7);
+    $("autoBar").hidden=true;
+    if(S.months[k])S.months[k]=S.months[k].filter(x=>x.id!==id);render();
+    await write(sb.from("buchungen").delete().eq("id",id),()=>loadMonth(k,true));}
+};
 
 /* ---------- Darstellung (Auto / Hell / Dunkel) ---------- */
 const THEME_ICONS={
