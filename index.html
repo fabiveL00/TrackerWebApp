@@ -312,6 +312,31 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
 .taxlist div{display:flex;justify-content:space-between;padding:8px 0;font-size:15px}
 .taxlist div + div{border-top:.5px solid var(--sep)}
 .taxlist span:first-child{color:var(--label2)}
+.salmode{display:flex;flex-direction:column;gap:6px;margin:0 4px 14px}
+.salmode>span{font-size:13px;color:var(--label2)}
+.plannote{grid-column:1/-1;margin:2px 4px 0;font-size:12px;color:var(--label2)}
+
+/* ===== Desktop ===== */
+@media (min-width:900px){
+  body{padding-bottom:40px;padding-left:112px;padding-right:32px}
+  .wrap{max-width:1160px}
+  .navbar{max-width:none;left:112px;right:32px;padding-left:0;padding-right:0}
+  .topfade{left:0}
+  .tabbar{left:20px;top:50%;bottom:auto;transform:translateY(-50%);width:auto;grid-template-columns:1fr;gap:4px;border-radius:30px;padding:8px}
+  .tabbar button{padding:10px 12px;border-radius:22px;font-size:11px;gap:3px}
+  .tabbar svg{width:24px;height:24px}
+  .toast{bottom:28px}
+  .split{display:grid;grid-template-columns:minmax(360px,440px) minmax(0,1fr);gap:28px;align-items:start}
+  .split>#homeTop{position:sticky;top:76px}
+  .split>#pane-list .search{margin-top:6px}
+  .split>#homeTop[hidden]+#pane-list,.split>#pane-list[hidden]{grid-column:1/-1}
+  #pane-cats,#pane-abos,#pane-wish,#pane-debt{max-width:820px}
+  h1{font-size:40px}
+  .sheet{left:50%;right:auto;width:520px;transform:translateX(-50%);bottom:auto;top:12vh}
+  @media (prefers-reduced-motion:no-preference){.sheet:not([hidden]){animation:none}}
+  button.item:hover,.catbtn:hover{background:var(--fill2)}
+  .chip:hover{filter:brightness(.97)}
+}
 </style>
 
 </head>
@@ -344,6 +369,7 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
   </div>
   <h1 id="pageTitle">Buchungen</h1>
 
+  <div class="split">
   <div id="homeTop">
 
   <section class="hero" aria-label="Monatsübersicht">
@@ -398,6 +424,7 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
     </div>
     <div id="listBody"></div>
   </section>
+  </div>
 
   <!-- Übersicht -->
   <section id="pane-cats" hidden>
@@ -427,6 +454,8 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
   <section id="pane-abos" hidden>
     <h2 class="sec">Gehalt</h2>
     <div class="salary" id="salaryNow"></div>
+    <div class="salmode"><span>Gehalt zählt als Budget für</span>
+      <div class="seg" id="salModeSeg" role="group" aria-label="Gehalt zählt für"><button type="button" data-sm="next">den Folgemonat</button><button type="button" data-sm="same">den Eingangsmonat</button></div></div>
     <form class="card" id="salForm" autocomplete="off">
       <div class="row" style="margin-top:0">
         <div class="field" style="flex:2 1 150px"><label for="salAmount">Netto pro Monat (€)</label><input id="salAmount" class="num" inputmode="decimal" placeholder="z. B. 1.250,00"></div>
@@ -560,7 +589,7 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
     <div class="group setgroup">
       <div class="setrow"><div><b>Erinnerungen</b><span id="pushState">Abends um 20 Uhr, wenn du noch nichts eingetragen hast, plus Kündigungsfristen.</span></div>
         <div class="setbtns"><button type="button" class="btn small" id="pushOn">Aktivieren</button><button type="button" class="btn small ghost" id="pushTest" hidden>Test</button><button type="button" class="btn small ghost" id="pushOff" hidden>Aus</button></div></div>
-      <div class="setrow"><div><b>App-Sperre</b><span id="lockState">Beim Öffnen mit Face ID entsperren.</span></div>
+      <div class="setrow"><div><b>App-Sperre</b><span id="lockState">Beim Öffnen mit Face ID (Mac: Touch ID) entsperren.</span></div>
         <div class="setbtns"><select id="lockAfter" class="chipsel" hidden aria-label="Sperren nach"><option value="0">sofort</option><option value="1">nach 1 Min.</option><option value="5">nach 5 Min.</option><option value="15">nach 15 Min.</option></select><button type="button" class="btn small" id="lockOn">Einrichten</button><button type="button" class="btn small ghost" id="lockOff" hidden>Aus</button></div></div>
       <div class="setrow"><div><b>Backup</b><span id="backupInfo">Alle Daten als Excel-Datei sichern.</span></div>
         <div class="setbtns"><button type="button" class="btn small" id="backupBtn">Jetzt sichern</button></div></div>
@@ -580,8 +609,8 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
     <div class="lockbox">
       <div class="lockicon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg></div>
       <h2>Haushaltsbuch gesperrt</h2>
-      <p id="lockMsg">Entsperre mit Face ID.</p>
-      <button type="button" class="btn" id="unlockBtn">Mit Face ID entsperren</button>
+      <p id="lockMsg">Entsperre mit Face ID, Touch ID oder Windows Hello.</p>
+      <button type="button" class="btn" id="unlockBtn">Entsperren</button>
       <button type="button" class="linkbtn" id="lockLogout">Stattdessen abmelden</button>
     </div>
   </div>
@@ -723,11 +752,18 @@ const fmtMonth=k=>{const [y,m]=k.split("-").map(Number);return MONTHS[m-1]+" "+y
 
 /* ---------- derived ---------- */
 function monthRows(){return rowsFor(view.y,view.m)}
+const salNext=()=>!(S.settings&&S.settings.salaryMode==="same");
+/* Gehalt, das diesem Monat als Budget zugeordnet ist */
+function salaryBudgetFor(y,m){
+  if(!salNext())return salaryFor(y,m);
+  const py=m===0?y-1:y,pm=m===0?11:m-1,p=salaryFor(py,pm);
+  return p?{...p,paidOn:p.date,date:y+"-"+pad(m+1)+"-01"}:null;
+}
 function rowsFor(y,m){
   const key=y+"-"+pad(m+1);
   const items=(S.months[key]||[]).map(x=>({...x,src:"tx"}));
-  const sal=salaryFor(y,m);
-  if(sal)items.push({id:"sal@"+sal.date,type:"in",amount:sal.amount,cat:"Gehalt",note:"Gehalt",date:sal.date,src:"sal"});
+  const sal=salaryBudgetFor(y,m);
+  if(sal)items.push({id:"sal@"+sal.date,type:"in",amount:sal.amount,cat:"Gehalt",note:sal.paidOn?"Gehalt vom "+fmtShort(sal.paidOn).slice(0,6):"Gehalt",date:sal.date,src:"sal",paidOn:sal.paidOn||""});
   S.abos.forEach(a=>chargesIn(a,y,m).forEach(date=>items.push({id:a.id+"@"+date,aboId:a.id,type:"out",amount:a.amount,cat:a.cat,note:a.name,date,src:"abo",pay:a.pay})));
   return items.sort((a,b)=>b.date.localeCompare(a.date)||(a.src!=="tx")-(b.src!=="tx"));
 }
@@ -795,7 +831,8 @@ function renderPlan(rows){
   const forecast=inc-fixed-future-spentSoFar-pace*(dm-day);
   box.hidden=false;
   box.innerHTML=`<div class="glass"><div class="label">Heute noch frei</div><div class="val num ${freeToday<0?"neg":""}">${eur.format(freeToday)}</div><div class="sub">${perDay>0?eur.format(perDay)+" pro Tag bis Monatsende":"Budget für diesen Monat aufgebraucht"}</div></div>
-    <div class="glass"><div class="label">Prognose Monatsende</div><div class="val num ${forecast<0?"neg":"pos"}">${(forecast>0?"+":"")+eur.format(forecast)}</div><div class="sub">bei Ø ${eur.format(pace)} pro Tag wie bisher</div></div>`;
+    <div class="glass"><div class="label">Prognose Monatsende</div><div class="val num ${forecast<0?"neg":"pos"}">${(forecast>0?"+":"")+eur.format(forecast)}</div><div class="sub">bei Ø ${eur.format(pace)} pro Tag wie bisher</div></div>`+
+    (()=>{const n=salaryFor(view.y,view.m);return n&&salNext()?`<p class="plannote">Nächstes Gehalt am ${fmtShort(n.date)} (${eur.format(n.amount)}) zählt für ${MONTHS[(view.m+1)%12]}.</p>`:""})();
 }
 function renderForm(){
   $("typeOut").setAttribute("aria-pressed",tx.type==="out");
@@ -1175,6 +1212,11 @@ $("aboPause").onclick=async()=>{
 $("aboList").onclick=e=>{const b=e.target.closest("button.item");if(b)openAbo(b.dataset.abo)};
 
 /* ---------- Gehalt ---------- */
+$("salModeSeg").onclick=async e=>{
+  const b=e.target.closest("[data-sm]");if(!b)return;
+  S.settings={...S.settings,salaryMode:b.dataset.sm};render();
+  if(!S.noPay)await write(sb.from("einstellungen").upsert({user_id:S.user.id,daten:S.settings,updated_at:new Date().toISOString()},{onConflict:"user_id"}),loadStatic);
+};
 function renderSalary(){
   const cur=salaryFor(now.getFullYear(),now.getMonth());
   const k=now.getFullYear()+"-"+pad(now.getMonth()+1);
@@ -1182,6 +1224,7 @@ function renderSalary(){
   $("salaryNow").innerHTML=S.needsUpdate?`<p class="hint err" style="margin:0 4px 12px">Für Gehalt und Wünsche fehlt noch das Datenbank-Update. Bitte supabase-update-2.sql im SQL Editor ausführen.</p>`:
     (cur?`<div class="salbig"><span class="big num">${eur.format(cur.amount)}</span><span class="sub">netto, ${cur.day>=31?"am letzten Tag jedes Monats":"jeden Monat am "+cur.day+"."}${upcoming?` · ab ${fmtMonth(upcoming.from)}: ${eur.format(upcoming.amount)}`:""}</span></div>`
         :`<p class="hint" style="margin:0 4px 12px">${upcoming?`Ab ${fmtMonth(upcoming.from)}: ${eur.format(upcoming.amount)}.`:"Noch kein Gehalt hinterlegt."}</p>`);
+  $("salModeSeg").querySelectorAll("[data-sm]").forEach(b=>b.setAttribute("aria-pressed",(b.dataset.sm==="next")===salNext()));
   const h=$("salHistory");
   if(S.gehalt.length<1){h.innerHTML="";return}
   h.innerHTML=`<div class="day"><div class="dayhead"><span>Verlauf</span><span>Netto</span></div><div class="group">`+[...S.gehalt].sort((a,b)=>b.from.localeCompare(a.from)).map(g=>
@@ -1540,7 +1583,7 @@ function saveLock(c){try{c?localStorage.setItem(LOCK_KEY,JSON.stringify(c)):loca
 const rnd=n=>crypto.getRandomValues(new Uint8Array(n));
 const toB64u=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 let locked=false,hiddenAt=0,unlocking=false;
-function showLock(){if(!lockCfg()||!S.user)return;locked=true;$("lockScreen").hidden=false;$("lockMsg").textContent="Entsperre mit Face ID."}
+function showLock(){if(!lockCfg()||!S.user)return;locked=true;$("lockScreen").hidden=false;$("lockMsg").textContent="Entsperre mit Face ID, Touch ID oder Windows Hello."}
 function hideLock(){locked=false;$("lockScreen").hidden=true}
 async function unlock(){
   const c=lockCfg();if(!c){hideLock();return}
@@ -1566,10 +1609,10 @@ function renderLock(){
   const c=lockCfg();
   $("lockOn").hidden=!!c;$("lockOff").hidden=$("lockAfter").hidden=!c;
   if(c)$("lockAfter").value=String(c.after??1);
-  $("lockState").textContent=c?"Aktiv auf diesem Gerät. Die App sperrt sich beim Öffnen und im Hintergrund.":"Beim Öffnen mit Face ID entsperren.";
+  $("lockState").textContent=c?"Aktiv auf diesem Gerät. Die App sperrt sich beim Öffnen und im Hintergrund.":"Beim Öffnen mit Face ID (Mac: Touch ID) entsperren.";
 }
 $("lockOn").onclick=async()=>{
-  if(!await lockAvailable()){flash("Face ID ist in diesem Browser nicht verfügbar.",true,5000);return}
+  if(!await lockAvailable()){flash("Face ID / Touch ID ist in diesem Browser nicht verfügbar.",true,5000);return}
   try{
     const cred=await navigator.credentials.create({publicKey:{challenge:rnd(32),rp:{name:"Haushaltsbuch"},user:{id:rnd(16),name:(S.user&&S.user.email)||"haushaltsbuch",displayName:"Haushaltsbuch"},
       pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],authenticatorSelection:{authenticatorAttachment:"platform",userVerification:"required",residentKey:"preferred"},attestation:"none",timeout:60000}});
