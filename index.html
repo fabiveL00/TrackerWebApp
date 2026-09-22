@@ -344,6 +344,14 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
 .tag.proj{background:color-mix(in srgb,var(--blue) 14%,transparent);color:var(--blue)}
 .newproj{display:flex;gap:8px;align-items:center;padding:10px}
 .newproj input{flex:1}
+.fuelmap{height:260px;border-radius:14px;overflow:hidden;background:var(--fill)}
+.mapcard{padding:10px;margin-top:4px}
+.pin{display:grid;place-items:center;width:54px;height:26px;border-radius:999px;background:var(--label);color:var(--bg);font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;box-shadow:0 2px 6px rgba(0,0,0,.3);border:2px solid var(--bg)}
+.pin.cheap{background:var(--green);color:#fff}
+.leaflet-container{font:inherit;background:var(--fill)}
+.leaflet-popup-content{font-size:14px;line-height:1.4}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .leaflet-tile{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.95)}}
+:root[data-theme="dark"] .leaflet-tile{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.95)}
 </style>
 
 </head>
@@ -410,6 +418,9 @@ footer button{border:0;background:none;padding:0;color:var(--blue);font-size:13p
       <div class="field" style="flex:1 1 90px"><label for="txLiter">Liter</label><input id="txLiter" class="num" inputmode="decimal" placeholder="z. B. 42,5"></div>
       <div class="field" style="flex:1 1 120px"><label for="txKm">Kilometerstand</label><input id="txKm" class="num" inputmode="numeric" placeholder="z. B. 84210"></div>
       <div class="field" style="flex:1 1 110px"><label for="txCar">Fahrzeug</label><input id="txCar" list="carList" placeholder="optional"><datalist id="carList"></datalist></div>
+      <div class="field" style="flex:1 1 100%"><label for="txOrt">Tankstelle</label>
+        <div class="taxline"><input id="txOrt" list="ortList" placeholder="z. B. Aral Ehingen" style="flex:1 1 150px"><datalist id="ortList"></datalist><button type="button" class="chip" id="geoBtn">Standort</button></div>
+        <p class="hint" id="geoMsg" style="margin:6px 4px 0"></p></div>
     </div>
     <div class="row" id="projRow"><div class="field" style="flex:1 1 100%"><label for="txProj">Projekt / Reise (optional)</label><input id="txProj" list="projList" placeholder="z. B. Mallorca 2026"><datalist id="projList"></datalist></div></div>
     <div class="row"><div class="field" style="flex:2 1 150px"><label for="txNote">Notiz</label><input id="txNote" placeholder="z. B. Edeka, Mensa"></div><div class="field" style="flex:1 1 140px"><label for="txDate">Datum</label><input id="txDate" type="date"></div></div>
@@ -689,8 +700,8 @@ const mk=()=>view.y+"-"+pad(view.m+1);
 const configured=!SUPABASE_URL.includes("DEIN-PROJEKT")&&!SUPABASE_ANON_KEY.includes("DEIN-");
 const sb=configured&&window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true}}):null;
 
-const fromTx=r=>({id:r.id,type:r.typ==="einnahme"?"in":"out",amount:Number(r.betrag),cat:r.kategorie,note:r.notiz||"",date:r.datum,pay:r.zahlart==="karte"?"karte":"konto",tax:r.steuer||"",proj:r.projekt||"",liter:r.liter!=null?Number(r.liter):null,km:r.km??null,car:r.fahrzeug||""});
-const toTx=e=>{const o={id:e.id,user_id:S.user.id,typ:e.type==="in"?"einnahme":"ausgabe",betrag:e.amount,kategorie:e.cat,notiz:e.note,datum:e.date};if(!S.noPay)o.zahlart=e.type==="out"&&e.pay==="karte"?"karte":"konto";if(!S.noU5)o.steuer=e.type==="out"&&e.tax?e.tax:null;if(!S.noU6){o.projekt=e.proj||null;const f=e.type==="out"&&e.cat==="Tanken & Auto";o.liter=f&&e.liter?e.liter:null;o.km=f&&e.km!=null?e.km:null;o.fahrzeug=f&&e.car?e.car:null}return o};
+const fromTx=r=>({id:r.id,type:r.typ==="einnahme"?"in":"out",amount:Number(r.betrag),cat:r.kategorie,note:r.notiz||"",date:r.datum,pay:r.zahlart==="karte"?"karte":"konto",tax:r.steuer||"",proj:r.projekt||"",liter:r.liter!=null?Number(r.liter):null,km:r.km??null,car:r.fahrzeug||"",lat:r.lat!=null?Number(r.lat):null,lon:r.lon!=null?Number(r.lon):null,ort:r.ort||""});
+const toTx=e=>{const o={id:e.id,user_id:S.user.id,typ:e.type==="in"?"einnahme":"ausgabe",betrag:e.amount,kategorie:e.cat,notiz:e.note,datum:e.date};if(!S.noPay)o.zahlart=e.type==="out"&&e.pay==="karte"?"karte":"konto";if(!S.noU5)o.steuer=e.type==="out"&&e.tax?e.tax:null;if(!S.noU6){o.projekt=e.proj||null;const f=e.type==="out"&&e.cat==="Tanken & Auto";o.liter=f&&e.liter?e.liter:null;o.km=f&&e.km!=null?e.km:null;o.fahrzeug=f&&e.car?e.car:null;if(!S.noU7){o.lat=f&&e.lat!=null?e.lat:null;o.lon=f&&e.lon!=null?e.lon:null;o.ort=f&&e.ort?e.ort:null}}return o};
 const fromAbo=r=>({id:r.id,name:r.name,amount:Number(r.betrag),interval:r.intervall,start:r.erste_abbuchung,cat:r.kategorie,active:r.aktiv,pay:r.zahlart==="karte"?"karte":"konto",end:r.laufzeit_ende||"",fristW:r.frist_wert??null,fristU:r.frist_einheit||"monate",renew:r.verlaengerung_monate||0});
 const fromDebt=r=>({id:r.id,person:r.person,amount:Number(r.betrag),dir:r.richtung,note:r.notiz||"",date:r.datum,done:r.erledigt_am||null});
 const fromSal=r=>({id:r.id,amount:Number(r.betrag),day:r.zahltag,from:String(r.gueltig_ab).slice(0,7)});
@@ -707,14 +718,14 @@ async function loadMonth(k,force){
   S.months[k]=data.map(fromTx);render();
 }
 async function loadStatic(){
-  const [a,b,g,w,st,dt,u5,u6]=await Promise.all([sb.from("abos").select("*").order("created_at"),sb.from("budgets").select("*"),sb.from("gehalt").select("*").order("gueltig_ab"),sb.from("wuensche").select("*").order("created_at"),sb.from("einstellungen").select("*").maybeSingle(),sb.from("schulden").select("*").order("datum",{ascending:false}),sb.from("buchungen").select("steuer").limit(1),sb.from("buchungen").select("projekt,liter,km,fahrzeug").limit(1)]);
+  const [a,b,g,w,st,dt,u5,u6,u7]=await Promise.all([sb.from("abos").select("*").order("created_at"),sb.from("budgets").select("*"),sb.from("gehalt").select("*").order("gueltig_ab"),sb.from("wuensche").select("*").order("created_at"),sb.from("einstellungen").select("*").maybeSingle(),sb.from("schulden").select("*").order("datum",{ascending:false}),sb.from("buchungen").select("steuer").limit(1),sb.from("buchungen").select("projekt,liter,km,fahrzeug").limit(1),sb.from("buchungen").select("lat,lon,ort").limit(1)]);
   if(a.error||b.error){flash("Laden fehlgeschlagen: "+(a.error||b.error).message,true,6000);return}
   S.abos=a.data.map(fromAbo);
   S.budgets=Object.fromEntries(b.data.map(r=>[r.schluessel,Number(r.betrag)]));
   S.needsUpdate=!!(g.error||w.error);
   S.gehalt=g.error?[]:g.data.map(fromSal);
   S.wishes=w.error?[]:w.data.map(fromWish);
-  S.noU5=!!u5.error;S.noU6=!!u6.error;S.noU4=!!dt.error;S.debts=dt.error?[]:dt.data.map(fromDebt);
+  S.noU5=!!u5.error;S.noU6=!!u6.error;S.noU7=!!u7.error;S.noU4=!!dt.error;S.debts=dt.error?[]:dt.data.map(fromDebt);
   S.noPay=!!st.error;S.settings=(st.data&&st.data.daten)||{};
   if(!tx.editing&&!$("txProj").value)$("txProj").value=activeProj();
   render();
@@ -861,6 +872,7 @@ function renderForm(){
   $("payRow").hidden=tx.type!=="out"||S.noPay;
   $("taxRow").hidden=tx.type!=="out"||S.noU5;
   $("fuelRow").hidden=tx.type!=="out"||tx.cat!=="Tanken & Auto"||S.noU6;
+  $("txOrt").closest(".field").hidden=!!S.noU7;
   $("projRow").hidden=!!S.noU6;
   renderProjBanner();
   const ts=$("txTax");if(!ts.options.length)ts.innerHTML=TAX_ARTS.map(a=>`<option>${esc(a)}</option>`).join("");
@@ -872,7 +884,7 @@ function renderForm(){
 
 function itemRow(r){
   const kind=r.src==="abo"?REC[recKind(r.cat)].n:"";
-  const inner=`<span class="t">${esc(r.note||r.cat)}${r.src==="abo"?`<span class="tag">${kind}</span>`:r.src==="sal"?'<span class="tag">Auto</span>':""}${r.pay==="karte"?'<span class="tag">Karte</span>':""}${r.tax?'<span class="tag">Steuer</span>':""}${r.proj?`<span class="tag proj">${esc(r.proj)}</span>`:""}</span><span class="m">${esc(r.cat)}${r.tax?" · "+esc(r.tax):""}${r.liter?` · ${fmtIn(r.liter)} l`+(r.km!=null?` · ${r.km.toLocaleString("de-DE")} km`:""):""}</span><span class="a num ${r.type==="in"?"pos":""}">${r.type==="in"?"+":"−"}${eur.format(r.amount)}</span>`;
+  const inner=`<span class="t">${esc(r.note||r.cat)}${r.src==="abo"?`<span class="tag">${kind}</span>`:r.src==="sal"?'<span class="tag">Auto</span>':""}${r.pay==="karte"?'<span class="tag">Karte</span>':""}${r.tax?'<span class="tag">Steuer</span>':""}${r.proj?`<span class="tag proj">${esc(r.proj)}</span>`:""}</span><span class="m">${esc(r.cat)}${r.tax?" · "+esc(r.tax):""}${r.liter?` · ${fmtIn(r.liter)} l`+(r.ort?` · ${esc(r.ort)}`:"")+(r.km!=null?` · ${r.km.toLocaleString("de-DE")} km`:""):""}</span><span class="a num ${r.type==="in"?"pos":""}">${r.type==="in"?"+":"−"}${eur.format(r.amount)}</span>`;
   if(r.src==="sal")return `<button type="button" class="item" data-sal="1" title="Gehalt bearbeiten">${inner}</button>`;
   return r.src==="abo"?`<button type="button" class="item" data-abo="${r.aboId}" title="Bearbeiten">${inner}</button>`:`<button type="button" class="item" data-tx="${r.id}" data-date="${r.date}" title="Bearbeiten">${inner}</button>`;
 }
@@ -1125,7 +1137,7 @@ $("kindSeg").onclick=e=>{const b=e.target.closest("[data-kind]");if(!b)return;ab
 
 /* ---------- Buchungen ---------- */
 function defaultDate(){const t=todayIso();return t.slice(0,7)===mk()?t:mk()+"-01"}
-function resetTx(){tx.editing=null;tx.editDate=null;tx.tax="";$("txLiter").value="";$("txKm").value="";$("txProj").value=activeProj();if(!tx.pay)tx.pay=lastPay();$("txAmount").value="";$("txNote").value="";$("txDate").value=defaultDate();$("txErr").textContent="";renderForm()}
+function resetTx(){tx.editing=null;tx.editDate=null;tx.tax="";$("txLiter").value="";$("txKm").value="";$("txOrt").value="";geoPos={lat:null,lon:null};$("geoMsg").textContent="";$("txProj").value=activeProj();if(!tx.pay)tx.pay=lastPay();$("txAmount").value="";$("txNote").value="";$("txDate").value=defaultDate();$("txErr").textContent="";renderForm()}
 $("typeOut").onclick=()=>{tx.type="out";renderForm()};
 $("typeIn").onclick=()=>{tx.type="in";renderForm()};
 function setPay(p){tx.pay=p;try{localStorage.setItem("hb-pay",p)}catch(e){}renderForm()}
@@ -1141,7 +1153,7 @@ $("txForm").onsubmit=async e=>{
   const k=date.slice(0,7);
   const lit=$("txLiter").value.trim()?parseAmt($("txLiter").value):null,kmv=$("txKm").value.trim()?parseInt($("txKm").value.replace(/\D/g,""),10):null;
   if(lit!==null&&isNaN(lit)){$("txErr").textContent="Bitte gültige Liter eingeben, z. B. 42,5.";return}
-  const entry={id:tx.editing||newId(),type:tx.type,amount,cat:tx.cat,note:$("txNote").value.trim(),date,pay:tx.type==="out"?tx.pay:"konto",tax:tx.type==="out"?(tx.tax||""):"",proj:$("txProj").value.trim(),liter:lit,km:isNaN(kmv)?null:kmv,car:$("txCar").value.trim()};
+  const entry={id:tx.editing||newId(),type:tx.type,amount,cat:tx.cat,note:$("txNote").value.trim(),date,pay:tx.type==="out"?tx.pay:"konto",tax:tx.type==="out"?(tx.tax||""):"",proj:$("txProj").value.trim(),liter:lit,km:isNaN(kmv)?null:kmv,car:$("txCar").value.trim(),ort:$("txOrt").value.trim(),lat:geoPos.lat,lon:geoPos.lon};
   S.projLoaded=false;S.fuelLoaded=false;
   const wasEditing=tx.editing,oldK=tx.editDate&&tx.editDate.slice(0,7);
   if(wasEditing&&S.months[oldK])S.months[oldK]=S.months[oldK].filter(x=>x.id!==wasEditing);
@@ -1167,7 +1179,7 @@ $("pane-list").onclick=e=>{
   if(b.dataset.abo){openAbo(b.dataset.abo);return}
   if(b.dataset.sal){openSalary();return}
   const k=b.dataset.date.slice(0,7),x=(S.months[k]||[]).find(i=>i.id===b.dataset.tx);if(!x)return;
-  tx={type:x.type,cat:x.cat,editing:x.id,editDate:x.date,pay:x.pay||"konto",tax:x.tax||""};$("txProj").value=x.proj||"";$("txLiter").value=x.liter?fmtIn(x.liter):"";$("txKm").value=x.km??"";$("txCar").value=x.car||"";
+  tx={type:x.type,cat:x.cat,editing:x.id,editDate:x.date,pay:x.pay||"konto",tax:x.tax||""};$("txProj").value=x.proj||"";$("txLiter").value=x.liter?fmtIn(x.liter):"";$("txKm").value=x.km??"";$("txCar").value=x.car||"";$("txOrt").value=x.ort||"";geoPos={lat:x.lat??null,lon:x.lon??null};$("geoMsg").textContent=x.lat!=null?"Standort gespeichert.":"";
   $("txAmount").value=fmtIn(x.amount);$("txNote").value=x.note||"";$("txDate").value=x.date;$("txErr").textContent="";
   renderForm();$("txForm").scrollIntoView({behavior:"smooth",block:"start"});
 };
@@ -1176,7 +1188,7 @@ $("catsList").onclick=e=>{
   const it=e.target.closest("button.item");
   if(it){if(it.dataset.abo){openAbo(it.dataset.abo);return}
     const k=it.dataset.date.slice(0,7),x=(S.months[k]||[]).find(i=>i.id===it.dataset.tx);if(!x)return;
-    tx={type:x.type,cat:x.cat,editing:x.id,editDate:x.date,pay:x.pay||"konto",tax:x.tax||""};$("txProj").value=x.proj||"";$("txLiter").value=x.liter?fmtIn(x.liter):"";$("txKm").value=x.km??"";$("txCar").value=x.car||"";tab="list";
+    tx={type:x.type,cat:x.cat,editing:x.id,editDate:x.date,pay:x.pay||"konto",tax:x.tax||""};$("txProj").value=x.proj||"";$("txLiter").value=x.liter?fmtIn(x.liter):"";$("txKm").value=x.km??"";$("txCar").value=x.car||"";$("txOrt").value=x.ort||"";geoPos={lat:x.lat??null,lon:x.lon??null};$("geoMsg").textContent=x.lat!=null?"Standort gespeichert.":"";tab="list";
     $("txAmount").value=fmtIn(x.amount);$("txNote").value=x.note||"";$("txDate").value=x.date;$("txErr").textContent="";
     render();$("txForm").scrollIntoView({behavior:"smooth",block:"start"});return}
   const b=e.target.closest("button.catbtn");if(!b)return;
@@ -1588,10 +1600,77 @@ $("projBox").addEventListener("click",e=>{
   if(it){if(it.dataset.abo){openAbo(it.dataset.abo);return}
     const x=(S.projRows||[]).find(r=>r.id===it.dataset.tx);if(!x)return;
     const k=x.date.slice(0,7);const [yy,mm]=k.split("-").map(Number);view={y:yy,m:mm-1};loadMonth(k);
-    tx={type:x.type,cat:x.cat,editing:x.id,editDate:x.date,pay:x.pay||"konto",tax:x.tax||""};$("txProj").value=x.proj||"";$("txLiter").value=x.liter?fmtIn(x.liter):"";$("txKm").value=x.km??"";$("txCar").value=x.car||"";
+    tx={type:x.type,cat:x.cat,editing:x.id,editDate:x.date,pay:x.pay||"konto",tax:x.tax||""};$("txProj").value=x.proj||"";$("txLiter").value=x.liter?fmtIn(x.liter):"";$("txKm").value=x.km??"";$("txCar").value=x.car||"";$("txOrt").value=x.ort||"";geoPos={lat:x.lat??null,lon:x.lon??null};$("geoMsg").textContent=x.lat!=null?"Standort gespeichert.":"";
     $("txAmount").value=fmtIn(x.amount);$("txNote").value=x.note||"";$("txDate").value=x.date;tab="list";render();$("txForm").scrollIntoView({behavior:"smooth",block:"start"});return}
   const p=e.target.closest("[data-proj]");if(p){openProj=openProj===p.dataset.proj?null:p.dataset.proj;renderProjects()}
 });
+
+/* ---------- Standort & Karte ---------- */
+let geoPos={lat:null,lon:null};
+$("geoBtn").onclick=()=>{
+  if(!navigator.geolocation){$("geoMsg").textContent="Standort wird hier nicht unterstützt.";return}
+  $("geoMsg").textContent="Suche Standort…";
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    geoPos={lat:+pos.coords.latitude.toFixed(6),lon:+pos.coords.longitude.toFixed(6)};
+    $("geoMsg").textContent=`Standort gespeichert (±${Math.round(pos.coords.accuracy)} m).`;
+    if(!$("txOrt").value.trim()){
+      const near=nearestStation(geoPos.lat,geoPos.lon);
+      if(near){$("txOrt").value=near;$("geoMsg").textContent+=` Erkannt: ${near}.`;return}
+      try{
+        const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&lat=${geoPos.lat}&lon=${geoPos.lon}`,{headers:{"Accept-Language":"de"}});
+        const j=await r.json(),a=j.address||{};
+        const name=(j.name||a.amenity||a.fuel||"").trim(),strasse=[a.road,a.house_number].filter(Boolean).join(" "),ort=a.village||a.town||a.city||a.suburb||"";
+        const label=[name||strasse,ort].filter(Boolean).join(", ");
+        if(label)$("txOrt").value=label;
+      }catch(e){}
+    }
+  },err=>{$("geoMsg").textContent=err.code===1?"Standort nicht erlaubt. In den Einstellungen für Safari bzw. die App freigeben.":"Standort konnte nicht ermittelt werden.";},{enableHighAccuracy:true,timeout:10000,maximumAge:60000});
+};
+const geoKey=(la,lo)=>la.toFixed(3)+","+lo.toFixed(3);
+function nearestStation(la,lo){
+  let best=null,bd=1e9;
+  (S.fuelRows||[]).forEach(r=>{if(r.lat==null||!r.ort)return;
+    const d=Math.hypot((r.lat-la)*111320,(r.lon-lo)*111320*Math.cos(la*Math.PI/180));
+    if(d<bd){bd=d;best=r.ort}});
+  return bd<180?best:null;
+}
+function stations(rows){
+  const g={};
+  rows.filter(r=>r.lat!=null&&r.liter).forEach(r=>{const k=r.ort||geoKey(r.lat,r.lon);(g[k]=g[k]||[]).push(r)});
+  return Object.entries(g).map(([name,l])=>{
+    const lit=l.reduce((s,r)=>s+r.liter,0),cost=l.reduce((s,r)=>s+r.amount,0),last=l.slice().sort((a,b)=>a.date.localeCompare(b.date)).pop();
+    return {name,n:l.length,avg:cost/lit,last,lat:last.lat,lon:last.lon,lastPpl:last.amount/last.liter};
+  }).sort((a,b)=>a.avg-b.avg);
+}
+let mapObj=null,mapKey="";
+async function ensureLeaflet(){
+  if(window.L)return true;
+  try{
+    if(!document.getElementById("leafletCss")){const l=document.createElement("link");l.id="leafletCss";l.rel="stylesheet";l.href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css";document.head.appendChild(l)}
+    await loadScript("https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js");
+    return !!window.L;
+  }catch(e){return false}
+}
+async function drawMap(st){
+  const el=$("fuelMap");if(!el)return;
+  if(!await ensureLeaflet()){el.innerHTML='<p class="hint">Karte konnte nicht geladen werden (offline?).</p>';return}
+  const key=st.map(s=>s.name+s.lastPpl.toFixed(3)).join("|");
+  if(mapObj&&mapKey===key)return;
+  if(mapObj){mapObj.remove();mapObj=null}
+  mapKey=key;el.innerHTML="";
+  const map=L.map(el,{scrollWheelZoom:false,attributionControl:true});mapObj=map;
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap-Mitwirkende"}).addTo(map);
+  const cheapest=st[0]?st[0].avg:0,dearest=st.length?st[st.length-1].avg:0;
+  const pts=[];
+  st.forEach(s=>{
+    const cheap=st.length>1&&s.avg<=cheapest+0.001;
+    const icon=L.divIcon({className:"",html:`<div class="pin${cheap?" cheap":""}">${s.lastPpl.toFixed(3).replace(".",",")}</div>`,iconSize:[54,26],iconAnchor:[27,26]});
+    L.marker([s.lat,s.lon],{icon}).addTo(map).bindPopup(`<b>${esc(s.name)}</b><br>Ø ${s.avg.toFixed(3).replace(".",",")} €/l · ${s.n}× getankt<br>zuletzt ${fmtShort(s.last.date)}: ${eur.format(s.last.amount)} für ${fmtIn(s.last.liter)} l`);
+    pts.push([s.lat,s.lon]);
+  });
+  if(pts.length===1)map.setView(pts[0],14);else map.fitBounds(pts,{padding:[30,30]});
+  setTimeout(()=>map.invalidateSize(),150);
+}
 
 /* ---------- Tankbuch ---------- */
 async function loadFuel(){if(S.fuelLoaded||S.fuelLoading||S.noU6)return;S.fuelLoading=true;try{S.fuelRows=(await fetchWhere("liter")).map(fromTx);S.fuelLoaded=true}catch(e){flash("Tankbuch laden fehlgeschlagen: "+e.message,true)}S.fuelLoading=false;render()}
@@ -1624,12 +1703,21 @@ function renderFuel(){
       </div>
       <div class="group">${st.rows.slice(-8).reverse().map(r=>`<button type="button" class="item" data-fuel="${r.id}"><span class="t">${fmtShort(r.date)}${r.note&&r.note!=="Tanken"?` · ${esc(r.note)}`:""}</span><span class="m">${fmtIn(r.liter)} l · ${r.ppl.toFixed(3).replace(".",",")} €/l${r.km!=null?` · ${r.km.toLocaleString("de-DE")} km`:""}${r.dist?` · ${r.dist.toLocaleString("de-DE")} km gefahren`:""}</span><span class="a num">${r.cons?r.cons.toFixed(1).replace(".",",")+" l/100":eur.format(r.amount)}</span></button>`).join("")}</div>`;
   });
+  const st=stations(rows);
+  $("ortList").innerHTML=[...new Set(rows.map(r=>r.ort).filter(Boolean))].map(o=>`<option value="${esc(o)}">`).join("");
+  if(st.length){
+    html+=`<h2 class="sec">Tankstellen</h2><div class="card mapcard"><div id="fuelMap" class="fuelmap"></div></div>
+      <div class="group">`+st.map(s=>`<div class="item"><span class="t">${esc(s.name)}${s===st[0]&&st.length>1?'<span class="tag proj">günstigste</span>':""}</span><span class="m">${s.n}× getankt · zuletzt ${fmtShort(s.last.date)}</span><span class="a num">${s.avg.toFixed(3).replace(".",",")} €/l</span></div>`).join("")+`</div>`;
+  }else if(!S.noU7){
+    html+=`<p class="hint">Tipp beim Eintragen auf „Standort“, dann erscheinen deine Tankstellen hier auf einer Karte mit dem Preis pro Liter.</p>`;
+  }
   el.innerHTML=html+`<p class="hint">Der Verbrauch wird von Tankfüllung zu Tankfüllung berechnet. Das stimmt nur, wenn du jedes Mal volltankst.</p>`;
+  if(st.length)drawMap(st);
 }
 $("fuelBox").addEventListener("click",e=>{
   const b=e.target.closest("[data-fuel]");if(!b)return;const x=(S.fuelRows||[]).find(r=>r.id===b.dataset.fuel);if(!x)return;
   const k=x.date.slice(0,7);const [yy,mm]=k.split("-").map(Number);view={y:yy,m:mm-1};loadMonth(k);
-  tx={type:x.type,cat:x.cat,editing:x.id,editDate:x.date,pay:x.pay||"konto",tax:x.tax||""};$("txProj").value=x.proj||"";$("txLiter").value=x.liter?fmtIn(x.liter):"";$("txKm").value=x.km??"";$("txCar").value=x.car||"";
+  tx={type:x.type,cat:x.cat,editing:x.id,editDate:x.date,pay:x.pay||"konto",tax:x.tax||""};$("txProj").value=x.proj||"";$("txLiter").value=x.liter?fmtIn(x.liter):"";$("txKm").value=x.km??"";$("txCar").value=x.car||"";$("txOrt").value=x.ort||"";geoPos={lat:x.lat??null,lon:x.lon??null};$("geoMsg").textContent=x.lat!=null?"Standort gespeichert.":"";
   $("txAmount").value=fmtIn(x.amount);$("txNote").value=x.note||"";$("txDate").value=x.date;tab="list";render();$("txForm").scrollIntoView({behavior:"smooth",block:"start"});
 });
 

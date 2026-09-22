@@ -1,5 +1,5 @@
 // Haushaltsbuch – Service Worker: speichert nur die App-Hülle, nie deine Daten.
-const CACHE = "haushaltsbuch-v13";
+const CACHE = "haushaltsbuch-v14";
 const SHELL = ["./", "index.html", "manifest.json", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
@@ -21,7 +21,7 @@ self.addEventListener("fetch", e => {
     return;
   }
   // Schrift & Supabase-Bibliothek: aus dem Cache, sonst laden und merken
-  if (url.hostname === "cdn.jsdelivr.net" || url.hostname.endsWith("gstatic.com") || url.hostname === "fonts.googleapis.com") {
+  if (url.hostname === "cdn.jsdelivr.net" || url.hostname === "unpkg.com" || url.hostname.endsWith("gstatic.com") || url.hostname === "fonts.googleapis.com") {
     e.respondWith(caches.match(e.request).then(hit => hit || fetch(e.request).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return r; })));
   }
 });
